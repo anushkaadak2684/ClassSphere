@@ -1,0 +1,26 @@
+{
+  "name": "classsphere",
+  "version": "1.0.0",
+  "description": "Real-Time Virtual Classroom Platform MVP",
+  "main": "server/src/server.js",
+  "scripts": {
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "build": "npm run build --prefix client"
+  },
+  "keywords": [
+    "virtual-classroom",
+    "webrtc",
+    "socketio",
+    "react",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

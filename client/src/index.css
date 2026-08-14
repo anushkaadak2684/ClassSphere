@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased font-sans;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+}
+
+/* Dark mode scrollbar for live theater / video views */
+.custom-dark-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-dark-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.custom-dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+
+.custom-dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
