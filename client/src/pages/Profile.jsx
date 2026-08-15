@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { User, Mail, Shield, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Shield, CheckCircle2, Save } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
-import Navbar from '../components/layout/Navbar';
+import AppLayout from '../components/layout/AppLayout';
 import Card from '../components/common/Card';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
@@ -32,53 +32,50 @@ export const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">User Profile</h1>
-        <p className="text-xs text-slate-500 mb-6">
-          Manage your account settings and personal details
-        </p>
-
-        <Card className="p-6 sm:p-8">
+    <AppLayout
+      title="User Profile"
+      subtitle="Account settings and credentials"
+    >
+      <div className="max-w-3xl mx-auto">
+        <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 shadow-xs rounded-2xl">
           {success && (
-            <div className="mb-5 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Profile updated successfully!</span>
+            <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2 font-medium">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Profile updated successfully in MongoDB database!</span>
             </div>
           )}
 
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+            <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-medium">
               {error}
             </div>
           )}
 
-          <div className="flex items-center gap-4 mb-6 pb-6 border-b border-slate-100">
-            <div className="w-16 h-16 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xl border-2 border-brand-200">
+          {/* Avatar and Identity */}
+          <div className="flex items-center gap-5 mb-8 pb-8 border-b border-slate-100">
+            <div className="w-16 h-16 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xl border-2 border-brand-200 shrink-0 overflow-hidden shadow-xs">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt={user?.name}
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 user?.name?.charAt(0).toUpperCase() || 'U'
               )}
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">{user?.name}</h3>
-              <p className="text-xs text-slate-500">{user?.email}</p>
-              <div className="mt-1.5">
-                <Badge variant={isTeacher ? 'brand' : 'default'} size="sm" className="capitalize">
-                  {user?.role}
-                </Badge>
+              <h3 className="text-lg font-bold text-slate-900">{user?.name}</h3>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">{user?.email}</p>
+              <div className="mt-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200 capitalize">
+                  {user?.role || (isTeacher ? 'Teacher' : 'Student')}
+                </span>
               </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Full Name"
               value={name}
@@ -92,7 +89,7 @@ export const Profile = () => {
               value={user?.email || ''}
               disabled
               icon={Mail}
-              helperText="Email cannot be changed after registration."
+              helperText="Firebase authenticated email cannot be changed directly."
             />
 
             <Input
@@ -100,17 +97,25 @@ export const Profile = () => {
               placeholder="https://example.com/avatar.jpg"
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
+              helperText="Provide a direct image URL for your profile picture."
             />
 
             <div className="pt-4 flex justify-end">
-              <Button type="submit" variant="primary" size="md" isLoading={loading}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                icon={Save}
+                isLoading={loading}
+                className="shadow-xs"
+              >
                 Save Changes
               </Button>
             </div>
           </form>
         </Card>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

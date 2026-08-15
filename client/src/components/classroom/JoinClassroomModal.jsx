@@ -5,7 +5,7 @@ import Button from '../common/Button';
 import classroomService from '../../services/classroom.service';
 import { LogIn } from 'lucide-react';
 
-export const JoinClassroomModal = ({ isOpen, onClose, onJoined }) => {
+export const JoinClassroomModal = ({ isOpen, onClose, onJoined, onClassroomJoined }) => {
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,7 +23,10 @@ export const JoinClassroomModal = ({ isOpen, onClose, onJoined }) => {
       setError(null);
       const result = await classroomService.joinClassroom(cleanCode);
       setJoinCode('');
-      onJoined(result.classroom);
+      const callback = onJoined || onClassroomJoined;
+      if (typeof callback === 'function') {
+        callback(result.classroom || result);
+      }
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to join classroom. Please verify the code.');

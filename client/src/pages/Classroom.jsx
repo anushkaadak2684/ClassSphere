@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import classroomService from '../services/classroom.service';
-import Navbar from '../components/layout/Navbar';
+import AppLayout from '../components/layout/AppLayout';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Loader from '../components/common/Loader';
@@ -31,11 +31,16 @@ import AttendanceTable from '../components/classroom/AttendanceTable';
 import AssignmentList from '../components/assignments/AssignmentList';
 import CreateAssignmentModal from '../components/assignments/CreateAssignmentModal';
 import ProgressView from '../components/progress/ProgressView';
+import { useLocation } from 'react-router-dom';
 
 export const Classroom = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isTeacher } = useAuth();
+
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get('tab') || 'overview';
 
   const [classroom, setClassroom] = useState(null);
   const [participants, setParticipants] = useState({ teacher: null, students: [] });
@@ -44,7 +49,7 @@ export const Classroom = () => {
   const [attendance, setAttendance] = useState([]);
   const [progressData, setProgressData] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'materials' | 'assignments' | 'participants' | 'attendance' | 'progress'
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -175,18 +180,18 @@ export const Classroom = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <Navbar />
-        <Loader fullScreen text="Loading classroom information..." />
-      </div>
+      <AppLayout title="Classroom">
+        <div className="py-20 flex flex-col items-center justify-center">
+          <Loader size="lg" text="Loading classroom information..." />
+        </div>
+      </AppLayout>
     );
   }
 
   if (error || !classroom) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <Navbar />
-        <div className="max-w-3xl mx-auto px-4 py-12 w-full">
+      <AppLayout title="Classroom Error">
+        <div className="max-w-3xl mx-auto py-12 w-full">
           <ErrorMessage message={error || 'Classroom not found'} onRetry={fetchAllData} />
           <div className="mt-4">
             <Link to="/dashboard">
@@ -196,15 +201,16 @@ export const Classroom = () => {
             </Link>
           </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppLayout
+      title={classroom.name}
+      subtitle={classroom.subject || 'Classroom Hub'}
+    >
+      <div>
         {/* Back Link */}
         <div className="mb-6">
           <Link
@@ -643,7 +649,7 @@ export const Classroom = () => {
             />
           </div>
         )}
-      </main>
+      </div>
 
       {/* Upload Material Modal */}
       <MaterialUpload
@@ -660,7 +666,7 @@ export const Classroom = () => {
         classroomId={id}
         onCreated={handleAssignmentCreated}
       />
-    </div>
+    </AppLayout>
   );
 };
 

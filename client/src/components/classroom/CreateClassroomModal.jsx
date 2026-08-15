@@ -5,7 +5,7 @@ import Button from '../common/Button';
 import classroomService from '../../services/classroom.service';
 import { Plus } from 'lucide-react';
 
-export const CreateClassroomModal = ({ isOpen, onClose, onCreated }) => {
+export const CreateClassroomModal = ({ isOpen, onClose, onCreated, onClassroomCreated }) => {
   const [formData, setFormData] = useState({
     name: '',
     subject: '',
@@ -31,7 +31,10 @@ export const CreateClassroomModal = ({ isOpen, onClose, onCreated }) => {
       setError(null);
       const newClassroom = await classroomService.createClassroom(formData);
       setFormData({ name: '', subject: '', description: '' });
-      onCreated(newClassroom);
+      const callback = onCreated || onClassroomCreated;
+      if (typeof callback === 'function') {
+        callback(newClassroom);
+      }
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to create classroom.');
