@@ -21,10 +21,14 @@ const uploadBufferToCloudinary = (buffer, folder = 'classsphere_materials', orig
       });
     }
 
+    const ext = originalName ? originalName.split('.').pop().toLowerCase() : '';
+    const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext);
+    const targetResourceType = isImage ? 'image' : 'raw';
+
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: folder,
-        resource_type: 'auto',
+        resource_type: targetResourceType,
         public_id: `${Date.now()}_${originalName.replace(/[^a-zA-Z0-9]/g, '_')}`,
       },
       (error, result) => {
@@ -35,7 +39,7 @@ const uploadBufferToCloudinary = (buffer, folder = 'classsphere_materials', orig
         resolve({
           secureUrl: result.secure_url,
           publicId: result.public_id,
-          resourceType: result.resource_type || 'raw',
+          resourceType: result.resource_type || targetResourceType,
           fileSize: result.bytes || buffer.length,
         });
       }

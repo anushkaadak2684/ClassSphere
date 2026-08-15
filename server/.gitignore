@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+*.log
+node_modules/
+dist/
+build/
+test_*.js
+verify_*.js
+testFirebase*.js
+verify*.js
+serviceAccountKey*.json
+*serviceAccount*.json

@@ -176,6 +176,9 @@ const getClassroomParticipants = async (classroomId) => {
   };
 };
 
+const Assignment = require('../models/Assignment');
+const Submission = require('../models/Submission');
+
 /**
  * Delete a classroom and all associated records
  */
@@ -185,6 +188,8 @@ const deleteClassroomCascade = async (classroomId) => {
   await Message.deleteMany({ classroom: classroomId });
   await Material.deleteMany({ classroom: classroomId });
   await Attendance.deleteMany({ classroom: classroomId });
+  await Assignment.deleteMany({ classroom: classroomId });
+  await Submission.deleteMany({ classroom: classroomId });
   return true;
 };
 

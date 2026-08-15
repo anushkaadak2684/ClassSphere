@@ -6,10 +6,9 @@ const connectDB = async () => {
     const conn = await mongoose.connect(mongoURI, {
       autoIndex: true,
     });
-    console.log(`[MongoDB] Connected to database: ${conn.connection.host}/${conn.connection.name}`);
+    console.log(`MongoDB connected successfully: ${conn.connection.host}/${conn.connection.name}`);
   } catch (error) {
-    console.error(`[MongoDB Connection Error]: ${error.message}`);
-    // Don't crash immediately in dev mode if MongoDB is starting up, but log clear warning
+    console.error(`MongoDB connection failed: ${error.message}`);
     if (process.env.NODE_ENV === 'production') {
       process.exit(1);
     }

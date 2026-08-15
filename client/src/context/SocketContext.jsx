@@ -13,7 +13,7 @@ export const SocketProvider = ({ children }) => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !firebaseUser) {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -27,17 +27,10 @@ export const SocketProvider = ({ children }) => {
 
     const setupSocket = async () => {
       try {
-        let token = localStorage.getItem('classsphere_token');
-        if (firebaseUser) {
-          try {
-            token = await firebaseUser.getIdToken();
-          } catch (e) {
-            console.warn('[SocketContext] getIdToken error:', e);
-          }
-        }
-
+        const token = await firebaseUser.getIdToken();
         if (!token) {
-          token = user.firebaseUid || user._id;
+          console.warn('[SocketContext] No Firebase ID token available');
+          return;
         }
 
         // Close any existing connection
@@ -60,16 +53,16 @@ export const SocketProvider = ({ children }) => {
           }
         });
 
-        newSocket.on('disconnect', (reason) => {
+        newSocket.on('connect_error', (err) => {
           if (isMounted) {
-            console.log('[Socket] Disconnected from server. Reason:', reason);
+            console.error('[Socket] Connection error:', err.message);
             setIsConnected(false);
           }
         });
 
-        newSocket.on('connect_error', (error) => {
-          console.error('[Socket Connect Error]:', error.message);
+        newSocket.on('disconnect', (reason) => {
           if (isMounted) {
+            console.log('[Socket] Disconnected:', reason);
             setIsConnected(false);
           }
         });
@@ -79,7 +72,7 @@ export const SocketProvider = ({ children }) => {
           setSocket(newSocket);
         }
       } catch (err) {
-        console.error('[Socket Setup Error]:', err);
+        console.error('[SocketContext] Setup error:', err);
       }
     };
 
@@ -89,7 +82,6 @@ export const SocketProvider = ({ children }) => {
       isMounted = false;
       if (socketRef.current) {
         socketRef.current.disconnect();
-        socketRef.current = null;
       }
     };
   }, [user, firebaseUser]);

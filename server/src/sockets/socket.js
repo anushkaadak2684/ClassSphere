@@ -25,29 +25,16 @@ const initSocketIO = (server) => {
         return next(new Error('Authentication token missing.'));
       }
 
-      let decodedToken;
+      if (!firebaseAdminInitialized) {
+        return next(new Error('Firebase Admin authentication not configured.'));
+      }
 
-      if (firebaseAdminInitialized) {
-        try {
-          decodedToken = await admin.auth().verifyIdToken(token);
-        } catch (err) {
-          console.error('[Socket Auth] Token verification failed:', err.message);
-          return next(new Error('Invalid token.'));
-        }
-      } else {
-        // Dev fallback decoding
-        try {
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            const payload = Buffer.from(parts[1], 'base64').toString('utf8');
-            decodedToken = JSON.parse(payload);
-            decodedToken.uid = decodedToken.uid || decodedToken.user_id || decodedToken.sub;
-          } else {
-            decodedToken = { uid: token, email: `${token}@example.com` };
-          }
-        } catch (e) {
-          return next(new Error('Malformed token.'));
-        }
+      let decodedToken;
+      try {
+        decodedToken = await admin.auth().verifyIdToken(token);
+      } catch (err) {
+        console.error('[Socket Auth] Firebase token verification failed:', err.message);
+        return next(new Error('Invalid or expired Firebase ID token.'));
       }
 
       if (!decodedToken || !decodedToken.uid) {
@@ -61,32 +48,30 @@ const initSocketIO = (server) => {
       }
 
       if (!user) {
-        return next(new Error('User profile not found.'));
+        return next(new Error('User profile not found in database.'));
       }
 
-      socket.user = {
-        _id: user._id.toString(),
-        firebaseUid: user.firebaseUid,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatarUrl: user.avatarUrl,
-      };
-
+      // Attach user to socket
+      socket.user = user;
+      socket.firebaseUid = decodedToken.uid;
       next();
     } catch (error) {
-      console.error('[Socket Auth Middleware Error]:', error);
-      next(new Error('Authentication error.'));
+      console.error('[Socket Auth Error]:', error.message);
+      next(new Error('Socket authentication failed.'));
     }
   });
 
   io.on('connection', (socket) => {
-    console.log(`[Socket Connected] User: ${socket.user.name} (${socket.user.role}) - ID: ${socket.id}`);
+    console.log(`[Socket Connected] User: ${socket.user?.name} (${socket.user?.role}) - ID: ${socket.id}`);
 
-    // Register all modular socket event handlers
+    // Register Modular Handlers
     registerClassroomSocketHandlers(io, socket);
     registerChatSocketHandlers(io, socket);
     registerWebRTCSocketHandlers(io, socket);
+
+    socket.on('disconnect', (reason) => {
+      console.log(`[Socket Disconnect] Socket ${socket.id} - Reason: ${reason}`);
+    });
   });
 
   return io;

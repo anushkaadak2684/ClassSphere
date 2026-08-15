@@ -8,6 +8,8 @@ const userRoutes = require('./routes/user.routes');
 const classroomRoutes = require('./routes/classroom.routes');
 const materialRoutes = require('./routes/material.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
+const assignmentRoutes = require('./routes/assignment.routes');
+const progressRoutes = require('./routes/progress.routes');
 
 const app = express();
 
@@ -56,6 +58,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/classrooms', classroomRoutes);
 app.use('/api', materialRoutes);
 app.use('/api', attendanceRoutes);
+app.use('/api', assignmentRoutes);
+app.use('/api', progressRoutes);
 
 // Catch 404
 app.use((req, res) => {

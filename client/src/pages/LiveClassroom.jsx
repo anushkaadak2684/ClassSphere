@@ -286,6 +286,20 @@ export const LiveClassroom = () => {
           </div>
         </div>
 
+        {/* Screen Sharing Active Status Bar */}
+        {isScreenSharing && (
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-500 text-brand-300 text-xs font-semibold animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-brand-400" />
+            <span>Screen Sharing Active</span>
+            <button
+              onClick={toggleScreenShare}
+              className="ml-1 px-2 py-0.5 rounded bg-brand-600 hover:bg-brand-700 text-white text-3xs font-medium transition-colors"
+            >
+              Stop Sharing
+            </button>
+          </div>
+        )}
+
         {/* Media Warning Banner if permissions failed */}
         {mediaError && (
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-3xs">
@@ -320,7 +334,19 @@ export const LiveClassroom = () => {
       {/* Main Center Area: Video Grid + Optional Collapsible Sidebars */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Central Video Theater */}
-        <main className="flex-1 h-full p-2 sm:p-4 overflow-y-auto custom-dark-scrollbar flex items-center justify-center">
+        <main className="flex-1 h-full p-2 sm:p-4 overflow-y-auto custom-dark-scrollbar flex flex-col items-center justify-center relative">
+          {isScreenSharing && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-brand-500/50 shadow-xl backdrop-blur-xs flex items-center gap-2 text-xs text-brand-200">
+              <span className="w-2 h-2 rounded-full bg-brand-400 animate-ping" />
+              <span>You are currently sharing your screen</span>
+              <button
+                onClick={toggleScreenShare}
+                className="ml-2 px-2.5 py-0.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-3xs font-semibold shadow-xs"
+              >
+                Stop Sharing
+              </button>
+            </div>
+          )}
           <VideoGrid
             localStream={localStream}
             remoteStreams={remoteStreams}

@@ -26,48 +26,29 @@ export const AuthProvider = ({ children }) => {
         const profile = await authService.getMe();
         setUser(profile);
       } catch (err) {
-        // If MongoDB record does not exist yet (e.g., initial sync in progress), create/sync it
+        // If MongoDB record does not exist yet (e.g. fresh register sync in progress), sync it
+        const role = localStorage.getItem('classsphere_role') || 'student';
         const synced = await authService.register(
           fbUser.displayName || fbUser.email.split('@')[0],
           fbUser.email,
           'defaultPass',
-          localStorage.getItem('classsphere_role') || 'student'
+          role
         );
         setUser(synced);
       }
     } catch (err) {
-      console.error('[AuthContext Sync Error]:', err);
-      // Fallback local user if backend is connecting
-      setUser({
-        firebaseUid: fbUser.uid,
-        email: fbUser.email,
-        name: fbUser.displayName || fbUser.email.split('@')[0],
-        role: localStorage.getItem('classsphere_role') || 'student',
-      });
+      console.error('[AuthContext Profile Fetch Notice]:', err.message);
     }
   };
 
   useEffect(() => {
-    // Check initial local session token
-    const token = localStorage.getItem('classsphere_token');
-    if (token) {
-      authService
-        .getMe()
-        .then((profile) => {
-          setUser(profile);
-          setLoading(false);
-        })
-        .catch(() => {
-          setLoading(false);
-        });
-    }
-
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
         await fetchUserProfile(fbUser);
-      } else if (!localStorage.getItem('classsphere_token')) {
+      } else {
         setUser(null);
+        localStorage.removeItem('classsphere_token');
       }
       setLoading(false);
     });
@@ -115,7 +96,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (data) => {
     try {
-      const updated = await authService.updateProfile(data);
+      const updated = await authService.updateMe(data);
       setUser((prev) => ({ ...prev, ...updated }));
       return updated;
     } catch (err) {

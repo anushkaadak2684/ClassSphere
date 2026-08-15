@@ -73,6 +73,67 @@ export const classroomService = {
     const res = await api.get(`/classrooms/${classroomId}/attendance`);
     return res.data;
   },
+
+  // Assignments
+  async getAssignments(classroomId) {
+    const res = await api.get(`/classrooms/${classroomId}/assignments`);
+    return res.data;
+  },
+
+  async createAssignment(classroomId, formData) {
+    const res = await api.post(`/classrooms/${classroomId}/assignments`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+
+  async getAssignmentById(assignmentId) {
+    const res = await api.get(`/assignments/${assignmentId}`);
+    return res.data;
+  },
+
+  async updateAssignment(assignmentId, data) {
+    const res = await api.put(`/assignments/${assignmentId}`, data);
+    return res.data;
+  },
+
+  async deleteAssignment(assignmentId) {
+    const res = await api.delete(`/assignments/${assignmentId}`);
+    return res.data;
+  },
+
+  // Submissions
+  async submitAssignment(assignmentId, formData) {
+    const res = await api.post(`/assignments/${assignmentId}/submit`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+
+  async getAssignmentSubmissions(assignmentId) {
+    const res = await api.get(`/assignments/${assignmentId}/submissions`);
+    return res.data;
+  },
+
+  async getMySubmission(assignmentId) {
+    const res = await api.get(`/assignments/${assignmentId}/my-submission`);
+    return res.data;
+  },
+
+  async gradeSubmission(submissionId, { marks, feedback }) {
+    const res = await api.put(`/submissions/${submissionId}/grade`, { marks, feedback });
+    return res.data;
+  },
+
+  // Progress Analytics
+  async getProgress(classroomId) {
+    const res = await api.get(`/classrooms/${classroomId}/progress`);
+    return res.data;
+  },
 };
 
 export default classroomService;

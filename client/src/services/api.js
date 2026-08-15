@@ -10,44 +10,63 @@ const api = axios.create({
   },
 });
 
-// Request interceptor: attach Firebase ID token
+// Request interceptor: attach fresh Firebase ID token
 api.interceptors.request.use(
   async (config) => {
     try {
+      if (config.headers.Authorization) {
+        return config;
+      }
+
+      if (!auth.currentUser && typeof auth.authStateReady === 'function') {
+        await auth.authStateReady();
+      }
+
       const currentUser = auth.currentUser;
       if (currentUser) {
+        // getIdToken() retrieves a fresh unexpired token
         const token = await currentUser.getIdToken();
         config.headers.Authorization = `Bearer ${token}`;
       } else {
-        // Check localStorage fallback for dev session tokens
         const storedToken = localStorage.getItem('classsphere_token');
         if (storedToken) {
           config.headers.Authorization = `Bearer ${storedToken}`;
         }
       }
     } catch (error) {
-      console.error('[API Interceptor] Failed to retrieve token:', error);
+      console.error('[API Interceptor] Failed to retrieve fresh token:', error);
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: handle errors consistently
+// Response interceptor: auto-retry on 401 with forced token refresh
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest?._retry && auth.currentUser) {
+      originalRequest._retry = true;
+      try {
+        const freshToken = await auth.currentUser.getIdToken(true);
+        localStorage.setItem('classsphere_token', freshToken);
+        originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+        return api(originalRequest);
+      } catch (refreshErr) {
+        console.error('[Token Refresh Error]:', refreshErr);
+      }
+    }
+
     const message =
       error.response?.data?.message ||
       error.message ||
       'An unexpected error occurred. Please try again.';
 
-    // Check for 401 unauthorized
-    if (error.response?.status === 401) {
-      // Optional trigger for auth logout or refresh
-    }
-
-    return Promise.reject(new Error(message));
+    const customError = new Error(message);
+    customError.status = error.response?.status;
+    customError.data = error.response?.data;
+    return Promise.reject(customError);
   }
 );
 

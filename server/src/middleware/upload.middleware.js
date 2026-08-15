@@ -5,7 +5,30 @@ const path = require('path');
 const storage = multer.memoryStorage();
 
 // Allowed file extensions and mime types
-const allowedExtensions = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.png', '.jpg', '.jpeg'];
+const allowedExtensions = [
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.ppt',
+  '.pptx',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.zip',
+  '.rar',
+  '.7z',
+  '.tar',
+  '.gz',
+  '.txt',
+  '.c',
+  '.cpp',
+  '.py',
+  '.java',
+  '.js',
+  '.ts',
+  '.json',
+];
+
 const allowedMimeTypes = [
   'application/pdf',
   'application/msword',
@@ -15,16 +38,26 @@ const allowedMimeTypes = [
   'image/png',
   'image/jpeg',
   'image/jpg',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/octet-stream',
+  'text/plain',
+  'application/json',
 ];
 
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  if (allowedExtensions.includes(ext) || allowedMimeTypes.includes(file.mimetype)) {
+  if (
+    allowedExtensions.includes(ext) ||
+    allowedMimeTypes.includes(file.mimetype) ||
+    file.mimetype.startsWith('text/') ||
+    file.mimetype.startsWith('image/')
+  ) {
     cb(null, true);
   } else {
     cb(
       new Error(
-        'Invalid file type. Only PDF, Word documents, PowerPoint presentations, PNG, and JPEG files are allowed.'
+        'Invalid file type. Allowed formats: PDF, Word, PowerPoint, Images, ZIP archives, and source code files.'
       ),
       false
     );

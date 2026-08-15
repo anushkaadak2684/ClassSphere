@@ -10,11 +10,13 @@ import {
   Check,
   Plus,
   Play,
-  Square,
   Upload,
   Trash2,
   Calendar,
-  Sparkles,
+  BookOpen,
+  TrendingUp,
+  Award,
+  Crown,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import classroomService from '../services/classroom.service';
@@ -26,6 +28,9 @@ import ErrorMessage from '../components/common/ErrorMessage';
 import MaterialList from '../components/materials/MaterialList';
 import MaterialUpload from '../components/materials/MaterialUpload';
 import AttendanceTable from '../components/classroom/AttendanceTable';
+import AssignmentList from '../components/assignments/AssignmentList';
+import CreateAssignmentModal from '../components/assignments/CreateAssignmentModal';
+import ProgressView from '../components/progress/ProgressView';
 
 export const Classroom = () => {
   const { id } = useParams();
@@ -35,13 +40,17 @@ export const Classroom = () => {
   const [classroom, setClassroom] = useState(null);
   const [participants, setParticipants] = useState({ teacher: null, students: [] });
   const [materials, setMaterials] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [progressData, setProgressData] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'materials' | 'attendance'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'materials' | 'assignments' | 'participants' | 'attendance' | 'progress'
   const [loading, setLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isCreateAssignmentOpen, setIsCreateAssignmentOpen] = useState(false);
   const [liveActionLoading, setLiveActionLoading] = useState(false);
 
   const isClassroomTeacher = isTeacher && classroom?.teacher?._id === user?._id;
@@ -51,24 +60,34 @@ export const Classroom = () => {
       setLoading(true);
       setError(null);
 
-      const [classData, partsData, matsData] = await Promise.all([
+      const [classData, partsData, matsData, assignData] = await Promise.all([
         classroomService.getClassroomById(id),
         classroomService.getParticipants(id),
         classroomService.getMaterials(id),
+        classroomService.getAssignments(id),
       ]);
 
       setClassroom(classData);
       setParticipants(partsData);
-      setMaterials(matsData);
+      setMaterials(matsData || []);
+      setAssignments(assignData || []);
 
-      // If teacher, also fetch attendance
+      // If teacher, fetch attendance
       if (user?.role === 'teacher') {
         try {
           const attData = await classroomService.getAttendance(id);
-          setAttendance(attData);
+          setAttendance(attData || []);
         } catch (e) {
-          console.warn('[Attendance fetch error]:', e);
+          console.warn('[Attendance fetch notice]:', e);
         }
+      }
+
+      // Fetch progress
+      try {
+        const prog = await classroomService.getProgress(id);
+        setProgressData(prog);
+      } catch (e) {
+        console.warn('[Progress fetch notice]:', e);
       }
     } catch (err) {
       console.error('[Classroom fetch error]:', err);
@@ -81,6 +100,19 @@ export const Classroom = () => {
   useEffect(() => {
     fetchAllData();
   }, [id]);
+
+  const refreshAssignmentsAndProgress = async () => {
+    try {
+      const [assignData, progData] = await Promise.all([
+        classroomService.getAssignments(id),
+        classroomService.getProgress(id),
+      ]);
+      setAssignments(assignData || []);
+      setProgressData(progData);
+    } catch (e) {
+      console.warn('[Refresh error]:', e);
+    }
+  };
 
   const copyCode = () => {
     if (classroom?.joinCode) {
@@ -112,6 +144,22 @@ export const Classroom = () => {
       setMaterials((prev) => prev.filter((m) => m._id !== materialId));
     } catch (err) {
       alert(err.message || 'Failed to delete material.');
+    }
+  };
+
+  const handleAssignmentCreated = (newAssignment) => {
+    setAssignments((prev) => [newAssignment, ...prev]);
+    refreshAssignmentsAndProgress();
+  };
+
+  const handleDeleteAssignment = async (assignmentId) => {
+    if (!window.confirm('Are you sure you want to delete this assignment and all submissions?')) return;
+    try {
+      await classroomService.deleteAssignment(assignmentId);
+      setAssignments((prev) => prev.filter((a) => a._id !== assignmentId));
+      refreshAssignmentsAndProgress();
+    } catch (err) {
+      alert(err.message || 'Failed to delete assignment.');
     }
   };
 
@@ -210,6 +258,7 @@ export const Classroom = () => {
                 <span>•</span>
                 <button
                   onClick={copyCode}
+                  title="Click to copy join code"
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold transition-colors"
                 >
                   <span>Code: {classroom.joinCode}</span>
@@ -258,8 +307,8 @@ export const Classroom = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-slate-200 mb-6">
-          <nav className="flex space-x-6 text-sm font-medium">
+        <div className="border-b border-slate-200 mb-6 overflow-x-auto">
+          <nav className="flex space-x-6 text-sm font-medium whitespace-nowrap min-w-max">
             <button
               onClick={() => setActiveTab('overview')}
               className={`pb-3 relative transition-colors ${
@@ -268,7 +317,7 @@ export const Classroom = () => {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Overview & Students
+              Overview
             </button>
             <button
               onClick={() => setActiveTab('materials')}
@@ -278,9 +327,35 @@ export const Classroom = () => {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>Learning Materials</span>
+              <span>Materials</span>
               <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
                 {materials.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('assignments')}
+              className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
+                activeTab === 'assignments'
+                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>Assignments</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
+                {assignments.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('participants')}
+              className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
+                activeTab === 'participants'
+                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>Participants</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
+                {participants.students?.length || 0}
               </span>
             </button>
             {isClassroomTeacher && (
@@ -292,47 +367,78 @@ export const Classroom = () => {
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <span>Attendance Records</span>
+                <span>Attendance</span>
                 <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
                   {attendance.length}
                 </span>
               </button>
             )}
+            <button
+              onClick={() => setActiveTab('progress')}
+              className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
+                activeTab === 'progress'
+                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>Progress Analytics</span>
+              <TrendingUp className="w-3.5 h-3.5 text-brand-500" />
+            </button>
           </nav>
         </div>
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: Students List */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Classroom Summary
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {classroom.description || 'No specific instructions provided.'}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-3xs text-slate-400 font-semibold uppercase">Subject</span>
+                    <p className="text-xs font-bold text-slate-800 mt-0.5">{classroom.subject}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-3xs text-slate-400 font-semibold uppercase">Enrolled Students</span>
+                    <p className="text-xs font-bold text-slate-800 mt-0.5">{participants.students?.length || 0}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-3xs text-slate-400 font-semibold uppercase">Join Code</span>
+                    <p className="text-xs font-mono font-bold text-brand-600 mt-0.5">{classroom.joinCode}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Materials & Assignments preview */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                    Enrolled Students ({participants.students?.length || 0})
+                    Upcoming Assignments
                   </h3>
+                  <button
+                    onClick={() => setActiveTab('assignments')}
+                    className="text-xs text-brand-600 font-semibold hover:underline"
+                  >
+                    View All
+                  </button>
                 </div>
-
-                {participants.students?.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-6 text-center">
-                    No students have enrolled yet. Share the classroom code{' '}
-                    <strong className="text-slate-700 font-mono">{classroom.joinCode}</strong> with your students.
-                  </p>
+                {assignments.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-3">No assignments posted yet.</p>
                 ) : (
-                  <div className="divide-y divide-slate-100">
-                    {participants.students.map((s) => (
-                      <div key={s._id} className="py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-xs border border-brand-100">
-                            {s.name?.charAt(0).toUpperCase() || 'S'}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-800">{s.name}</p>
-                            <p className="text-3xs text-slate-400">{s.email}</p>
-                          </div>
-                        </div>
-                        <span className="text-3xs text-slate-400">
-                          Joined {new Date(s.enrolledAt).toLocaleDateString()}
+                  <div className="space-y-2">
+                    {assignments.slice(0, 3).map((a) => (
+                      <div
+                        key={a._id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-slate-50 text-xs"
+                      >
+                        <span className="font-semibold text-slate-800">{a.title}</span>
+                        <span className="text-3xs text-slate-500">
+                          Due {new Date(a.dueDate).toLocaleDateString()}
                         </span>
                       </div>
                     ))}
@@ -341,11 +447,11 @@ export const Classroom = () => {
               </div>
             </div>
 
-            {/* Right: Teacher & Classroom Details */}
+            {/* Right: Teacher details & Danger Zone */}
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
-                  Instructor Information
+                  Instructor
                 </h3>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-sm border border-brand-200">
@@ -364,7 +470,7 @@ export const Classroom = () => {
                     Danger Zone
                   </h4>
                   <p className="text-3xs text-rose-600 mb-4">
-                    Deleting this classroom will remove all enrollments, chat messages, and learning materials.
+                    Deleting this classroom will remove all enrollments, assignments, submissions, and materials.
                   </p>
                   <Button
                     variant="danger"
@@ -397,7 +503,7 @@ export const Classroom = () => {
                   icon={Plus}
                   onClick={() => setIsUploadOpen(true)}
                 >
-                  Upload New File
+                  Upload Material
                 </Button>
               )}
             </div>
@@ -407,6 +513,103 @@ export const Classroom = () => {
               isTeacher={isClassroomTeacher}
               onDeleteMaterial={handleDeleteMaterial}
             />
+          </div>
+        )}
+
+        {activeTab === 'assignments' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Course Assignments</h3>
+                <p className="text-xs text-slate-500">
+                  {isClassroomTeacher
+                    ? 'Create assignments, track student submissions, and review grades.'
+                    : 'Download assignment briefs, submit your work, and view grades/feedback.'}
+                </p>
+              </div>
+              {isClassroomTeacher && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  icon={Plus}
+                  onClick={() => setIsCreateAssignmentOpen(true)}
+                >
+                  Create Assignment
+                </Button>
+              )}
+            </div>
+
+            <AssignmentList
+              assignments={assignments}
+              isTeacher={isClassroomTeacher}
+              onDeleteAssignment={handleDeleteAssignment}
+              onAssignmentUpdated={refreshAssignmentsAndProgress}
+            />
+          </div>
+        )}
+
+        {activeTab === 'participants' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Classroom Participants</h3>
+              <p className="text-xs text-slate-500">
+                View instructor and enrolled student roster.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-6">
+              {/* Instructor */}
+              <div>
+                <span className="text-3xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                  Instructor
+                </span>
+                <div className="p-3 rounded-xl bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center border border-brand-200">
+                      {classroom.teacher?.name?.charAt(0).toUpperCase() || 'T'}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-900">{classroom.teacher?.name}</p>
+                      <p className="text-3xs text-slate-400">{classroom.teacher?.email}</p>
+                    </div>
+                  </div>
+                  <Badge variant="brand" size="sm">
+                    <Crown className="w-2.5 h-2.5 mr-0.5" /> Teacher
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Students */}
+              <div>
+                <span className="text-3xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                  Enrolled Students ({participants.students?.length || 0})
+                </span>
+                {participants.students?.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-6 text-center">
+                    No students have enrolled in this classroom yet.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {participants.students.map((s) => (
+                      <div key={s._id} className="py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">
+                            {s.name?.charAt(0).toUpperCase() || 'S'}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-800">{s.name}</p>
+                            <p className="text-3xs text-slate-400">{s.email}</p>
+                          </div>
+                        </div>
+                        <span className="text-3xs text-slate-400">
+                          Enrolled {new Date(s.enrolledAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -422,14 +625,40 @@ export const Classroom = () => {
             <AttendanceTable records={attendance} />
           </div>
         )}
+
+        {activeTab === 'progress' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Classroom Progress & Performance</h3>
+              <p className="text-xs text-slate-500">
+                {isClassroomTeacher
+                  ? 'Overview of student attendance and assignment performance across the class.'
+                  : 'Your personal attendance rate, turned in assignments, and graded scores.'}
+              </p>
+            </div>
+
+            <ProgressView
+              progressData={progressData}
+              isTeacher={isClassroomTeacher}
+            />
+          </div>
+        )}
       </main>
 
-      {/* Upload Modal */}
+      {/* Upload Material Modal */}
       <MaterialUpload
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         classroomId={id}
         onUploaded={handleMaterialUploaded}
+      />
+
+      {/* Create Assignment Modal */}
+      <CreateAssignmentModal
+        isOpen={isCreateAssignmentOpen}
+        onClose={() => setIsCreateAssignmentOpen(false)}
+        classroomId={id}
+        onCreated={handleAssignmentCreated}
       />
     </div>
   );
