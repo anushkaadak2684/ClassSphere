@@ -6,6 +6,12 @@ const { authorizeClassroomOwner } = require('../middleware/role.middleware');
 
 router.use(authenticate, requireExistingUser);
 
+// Student views own attendance metrics & session logs across all classrooms
+router.get(
+  '/attendance/my',
+  attendanceController.getMyAttendance
+);
+
 // View classroom attendance (Teacher only)
 router.get(
   '/classrooms/:id/attendance',
@@ -14,3 +20,4 @@ router.get(
 );
 
 module.exports = router;
+

@@ -8,6 +8,7 @@ import Dashboard from '../pages/Dashboard';
 import MyClasses from '../pages/MyClasses';
 import AssignmentsPage from '../pages/AssignmentsPage';
 import StudentsPage from '../pages/StudentsPage';
+import AttendancePage from '../pages/AttendancePage';
 import ProgressPage from '../pages/ProgressPage';
 import Classroom from '../pages/Classroom';
 import LiveClassroom from '../pages/LiveClassroom';
@@ -30,11 +31,13 @@ export const AppRoutes = () => {
         <Route path="/my-classes" element={<MyClasses />} />
         <Route path="/assignments" element={<AssignmentsPage />} />
         <Route path="/students" element={<StudentsPage />} />
+        <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/classrooms/:id" element={<Classroom />} />
         <Route path="/classrooms/:id/live" element={<LiveClassroom />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
+
 
       {/* 404 Fallback */}
       <Route path="*" element={<NotFound />} />

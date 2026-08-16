@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const progressController = require('../controllers/progress.controller');
 const { authenticate, requireExistingUser } = require('../middleware/auth.middleware');
-const { authorizeClassroomMember } = require('../middleware/role.middleware');
+const { authorizeClassroomMember, authorizeClassroomOwner } = require('../middleware/role.middleware');
 
 router.use(authenticate, requireExistingUser);
 
@@ -13,4 +13,12 @@ router.get(
   progressController.getClassroomProgress
 );
 
+// Teacher views individual student details in classroom
+router.get(
+  '/classrooms/:id/students/:studentId/details',
+  authorizeClassroomOwner,
+  progressController.getStudentDetailsInClassroom
+);
+
 module.exports = router;
+

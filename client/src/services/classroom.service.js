@@ -74,6 +74,11 @@ export const classroomService = {
     return res.data;
   },
 
+  async getMyAttendance() {
+    const res = await api.get('/attendance/my');
+    return res.data;
+  },
+
   // Assignments
   async getAssignments(classroomId) {
     const res = await api.get(`/classrooms/${classroomId}/assignments`);
@@ -134,6 +139,12 @@ export const classroomService = {
     const res = await api.get(`/classrooms/${classroomId}/progress`);
     return res.data;
   },
+
+  async getStudentClassroomDetails(classroomId, studentId) {
+    const res = await api.get(`/classrooms/${classroomId}/students/${studentId}/details`);
+    return res.data;
+  },
 };
 
 export default classroomService;
+

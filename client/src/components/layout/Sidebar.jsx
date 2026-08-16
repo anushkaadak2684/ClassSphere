@@ -9,6 +9,7 @@ import {
   LogOut,
   GraduationCap,
   Users,
+  CalendarCheck,
   X,
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
@@ -87,6 +88,12 @@ export const Sidebar = ({ isOpen, onClose }) => {
           active: location.pathname === '/assignments',
         },
         {
+          label: 'Attendance',
+          to: '/attendance',
+          icon: CalendarCheck,
+          active: location.pathname === '/attendance',
+        },
+        {
           label: 'My Progress',
           to: '/progress',
           icon: BarChart3,
@@ -99,6 +106,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
           active: location.pathname === '/profile',
         },
       ];
+
 
   const sidebarContent = (
     <div className="h-full flex flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors">

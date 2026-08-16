@@ -1,4 +1,6 @@
 const Attendance = require('../models/Attendance');
+const Enrollment = require('../models/Enrollment');
+const Classroom = require('../models/Classroom');
 
 /**
  * Record attendance when student joins a live session
@@ -54,7 +56,7 @@ const recordStudentLeave = async (attendanceId) => {
 };
 
 /**
- * Get attendance records for a classroom
+ * Get attendance records for a classroom (Teacher view)
  */
 const getClassroomAttendance = async (classroomId) => {
   const records = await Attendance.find({ classroom: classroomId })
@@ -65,8 +67,79 @@ const getClassroomAttendance = async (classroomId) => {
   return records;
 };
 
+/**
+ * Get full attendance overview and session logs for a student across all enrolled classrooms
+ */
+const getStudentAttendance = async (studentId) => {
+  const enrollments = await Enrollment.find({ student: studentId, status: 'active' })
+    .populate('classroom', 'name subject joinCode isLive')
+    .lean();
+
+  const classroomIds = enrollments.map((e) => e.classroom?._id).filter(Boolean);
+
+  // Fetch all attendance logs for this student
+  const studentLogs = await Attendance.find({
+    student: studentId,
+    classroom: { $in: classroomIds },
+  })
+    .populate('classroom', 'name subject')
+    .sort({ joinedAt: -1 })
+    .lean();
+
+  // For each enrolled classroom, calculate sessions and attendance
+  let totalPlatformSessions = 0;
+  let totalPlatformAttended = 0;
+
+  const classroomBreakdown = await Promise.all(
+    enrollments.map(async (e) => {
+      const cId = e.classroom._id;
+      const distinctSessions = await Attendance.distinct('sessionDate', { classroom: cId });
+      const totalSessions = distinctSessions.length;
+
+      const classLogs = studentLogs.filter(
+        (log) => log.classroom?._id?.toString() === cId.toString()
+      );
+      const attendedCount = classLogs.filter(
+        (log) => log.status === 'present' || log.duration >= 60
+      ).length;
+
+      const percentage = totalSessions > 0
+        ? Math.min(100, Math.round((attendedCount / totalSessions) * 100))
+        : 100;
+
+      totalPlatformSessions += totalSessions;
+      totalPlatformAttended += attendedCount;
+
+      return {
+        classroom: e.classroom,
+        totalSessions,
+        attendedSessions: attendedCount,
+        missedSessions: Math.max(0, totalSessions - attendedCount),
+        attendancePercentage: percentage,
+      };
+    })
+  );
+
+  const overallPercentage = totalPlatformSessions > 0
+    ? Math.min(100, Math.round((totalPlatformAttended / totalPlatformSessions) * 100))
+    : 100;
+
+  return {
+    overall: {
+      attendancePercentage: overallPercentage,
+      totalSessions: totalPlatformSessions,
+      attendedSessions: totalPlatformAttended,
+      missedSessions: Math.max(0, totalPlatformSessions - totalPlatformAttended),
+    },
+    classroomBreakdown,
+    history: studentLogs,
+  };
+};
+
 module.exports = {
   recordStudentJoin,
   recordStudentLeave,
   getClassroomAttendance,
+  getStudentAttendance,
 };
+

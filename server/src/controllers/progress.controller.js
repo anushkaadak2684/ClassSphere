@@ -176,6 +176,120 @@ const getClassroomProgress = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Teacher views individual student detailed performance in a classroom
+ * GET /api/classrooms/:id/students/:studentId/details
+ */
+const getStudentDetailsInClassroom = asyncHandler(async (req, res) => {
+  const classroomId = req.params.id;
+  const studentId = req.params.studentId;
+
+  const classroom = req.classroom; // Already verified by authorizeClassroomOwner
+  if (!classroom) {
+    return res.status(404).json({
+      success: false,
+      message: 'Classroom not found.',
+    });
+  }
+
+  const enrollment = await Enrollment.findOne({
+    classroom: classroomId,
+    student: studentId,
+    status: 'active',
+  }).populate('student', 'name email avatarUrl role').lean();
+
+  if (!enrollment || !enrollment.student) {
+    return res.status(404).json({
+      success: false,
+      message: 'Student is not enrolled in this classroom.',
+    });
+  }
+
+  // Session attendance for this classroom
+  const distinctSessions = await Attendance.distinct('sessionDate', { classroom: classroomId });
+  const totalSessions = distinctSessions.length;
+
+  const attendanceRecords = await Attendance.find({
+    classroom: classroomId,
+    student: studentId,
+  }).sort({ joinedAt: -1 }).lean();
+
+  const attendedCount = attendanceRecords.filter((r) => r.status === 'present' || r.duration >= 60).length;
+  const attendancePercentage = totalSessions > 0
+    ? Math.min(100, Math.round((attendedCount / totalSessions) * 100))
+    : 100;
+
+  // Assignments & submissions for this classroom
+  const assignments = await Assignment.find({ classroom: classroomId }).sort({ dueDate: -1 }).lean();
+  const submissions = await Submission.find({
+    classroom: classroomId,
+    student: studentId,
+  }).populate('assignment').lean();
+
+  const submissionMap = {};
+  submissions.forEach((s) => {
+    submissionMap[s.assignment?._id?.toString() || s.assignment?.toString()] = s;
+  });
+
+  const assignmentHistory = assignments.map((a) => {
+    const sub = submissionMap[a._id.toString()];
+    const isOverdue = !sub && new Date() > new Date(a.dueDate);
+    return {
+      _id: a._id,
+      title: a.title,
+      dueDate: a.dueDate,
+      maxMarks: a.maxMarks,
+      submissionStatus: sub ? sub.status : (isOverdue ? 'overdue' : 'pending'),
+      marks: sub ? sub.marks : null,
+      feedback: sub ? sub.feedback : '',
+      submittedAt: sub ? sub.submittedAt : null,
+      fileUrl: sub ? sub.fileUrl : null,
+      fileName: sub ? sub.fileName : null,
+    };
+  });
+
+  const gradedSubmissions = submissions.filter((s) => s.status === 'graded' && s.marks !== null);
+  let averageMarks = 0;
+  if (gradedSubmissions.length > 0) {
+    const totalPercent = gradedSubmissions.reduce((sum, s) => {
+      const max = s.assignment?.maxMarks || 100;
+      return sum + (s.marks / max) * 100;
+    }, 0);
+    averageMarks = Math.round(totalPercent / gradedSubmissions.length);
+  }
+
+  const completedAssignments = submissions.length;
+  const pendingAssignments = Math.max(0, assignments.length - completedAssignments);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      student: enrollment.student,
+      enrolledAt: enrollment.joinedAt,
+      classroom: {
+        _id: classroom._id,
+        name: classroom.name,
+        subject: classroom.subject,
+      },
+      performance: {
+        attendancePercentage,
+        totalSessions,
+        attendedSessions: attendedCount,
+        missedSessions: Math.max(0, totalSessions - attendedCount),
+        totalAssignments: assignments.length,
+        completedAssignments,
+        pendingAssignments,
+        gradedCount: gradedSubmissions.length,
+        averageMarks,
+      },
+      assignmentHistory,
+      attendanceHistory: attendanceRecords,
+    },
+  });
+});
+
 module.exports = {
   getClassroomProgress,
+  getStudentDetailsInClassroom,
 };
+
