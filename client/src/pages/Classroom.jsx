@@ -51,7 +51,6 @@ export const Classroom = () => {
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
-  const [tabLoading, setTabLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -130,10 +129,13 @@ export const Classroom = () => {
   const handleStartLive = async () => {
     try {
       setLiveActionLoading(true);
-      await classroomService.startLiveSession(id);
+      if (!classroom.isLive) {
+        await classroomService.startLiveSession(id);
+      }
       navigate(`/classrooms/${id}/live`);
     } catch (err) {
-      setError(err.message || 'Failed to start live session.');
+      console.error('Start live class error:', err);
+    } finally {
       setLiveActionLoading(false);
     }
   };
@@ -142,13 +144,13 @@ export const Classroom = () => {
     setMaterials((prev) => [newMaterial, ...prev]);
   };
 
-  const handleDeleteMaterial = async (materialId) => {
-    if (!window.confirm('Are you sure you want to delete this material?')) return;
+  const handleDeleteMaterial = async (matId) => {
+    if (!window.confirm('Are you sure you want to delete this study material?')) return;
     try {
-      await classroomService.deleteMaterial(materialId);
-      setMaterials((prev) => prev.filter((m) => m._id !== materialId));
+      await classroomService.deleteMaterial(matId);
+      setMaterials((prev) => prev.filter((m) => m._id !== matId));
     } catch (err) {
-      alert(err.message || 'Failed to delete material.');
+      console.error('Delete material error:', err);
     }
   };
 
@@ -157,32 +159,34 @@ export const Classroom = () => {
     refreshAssignmentsAndProgress();
   };
 
-  const handleDeleteAssignment = async (assignmentId) => {
+  const handleDeleteAssignment = async (assignId) => {
     if (!window.confirm('Are you sure you want to delete this assignment and all submissions?')) return;
     try {
-      await classroomService.deleteAssignment(assignmentId);
-      setAssignments((prev) => prev.filter((a) => a._id !== assignmentId));
+      await classroomService.deleteAssignment(assignId);
+      setAssignments((prev) => prev.filter((a) => a._id !== assignId));
       refreshAssignmentsAndProgress();
     } catch (err) {
-      alert(err.message || 'Failed to delete assignment.');
+      console.error('Delete assignment error:', err);
     }
   };
 
   const handleDeleteClassroom = async () => {
-    if (!window.confirm('Are you sure you want to delete this entire classroom and all associated records?')) return;
+    if (!window.confirm('CRITICAL: Are you sure you want to delete this entire classroom? This action cannot be undone.')) {
+      return;
+    }
     try {
       await classroomService.deleteClassroom(id);
       navigate('/dashboard');
     } catch (err) {
-      alert(err.message || 'Failed to delete classroom.');
+      console.error('Delete classroom error:', err);
     }
   };
 
   if (loading) {
     return (
-      <AppLayout title="Classroom">
-        <div className="py-20 flex flex-col items-center justify-center">
-          <Loader size="lg" text="Loading classroom information..." />
+      <AppLayout title="Classroom Hub" subtitle="Loading...">
+        <div className="py-24 flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 transition-colors">
+          <Loader size="lg" text="Retrieving classroom details from database..." />
         </div>
       </AppLayout>
     );
@@ -190,13 +194,13 @@ export const Classroom = () => {
 
   if (error || !classroom) {
     return (
-      <AppLayout title="Classroom Error">
-        <div className="max-w-3xl mx-auto py-12 w-full">
+      <AppLayout title="Classroom Hub" subtitle="Error">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200/80 dark:border-slate-800 max-w-lg mx-auto text-center transition-colors">
           <ErrorMessage message={error || 'Classroom not found'} onRetry={fetchAllData} />
-          <div className="mt-4">
+          <div className="mt-6">
             <Link to="/dashboard">
               <Button variant="outline" size="sm" icon={ArrowLeft}>
-                Back to Dashboard
+                Return to Dashboard
               </Button>
             </Link>
           </div>
@@ -214,20 +218,20 @@ export const Classroom = () => {
         {/* Back Link */}
         <div className="mb-6">
           <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+            to="/my-classes"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Dashboard
+            Back to Classes
           </Link>
         </div>
 
         {/* Classroom Header Banner */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-xs mb-8">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-8 transition-colors">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Badge variant="brand" size="sm" className="font-semibold uppercase tracking-wider text-3xs">
+                <Badge variant="brand" size="sm" className="font-semibold uppercase tracking-wider text-[10px]">
                   {classroom.subject}
                 </Badge>
                 {classroom.isLive ? (
@@ -236,24 +240,24 @@ export const Classroom = () => {
                     LIVE SESSION IN PROGRESS
                   </Badge>
                 ) : (
-                  <span className="text-3xs font-medium text-slate-400">Class Offline</span>
+                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Class Offline</span>
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                 {classroom.name}
               </h1>
 
               {classroom.description && (
-                <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
                   {classroom.description}
                 </p>
               )}
 
               {/* Meta bar */}
-              <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-slate-500">
+              <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-medium text-slate-700">Teacher:</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">Teacher:</span>
                   <span>{classroom.teacher?.name || 'Instructor'}</span>
                 </div>
                 <span>•</span>
@@ -265,10 +269,10 @@ export const Classroom = () => {
                 <button
                   onClick={copyCode}
                   title="Click to copy join code"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono text-xs font-semibold transition-colors"
                 >
                   <span>Code: {classroom.joinCode}</span>
-                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                  {copied ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
                 </button>
               </div>
             </div>
@@ -292,6 +296,7 @@ export const Classroom = () => {
                     size="lg"
                     icon={Upload}
                     onClick={() => setIsUploadOpen(true)}
+                    className="bg-white/80 dark:bg-slate-800/80"
                   >
                     Upload Material
                   </Button>
@@ -313,14 +318,14 @@ export const Classroom = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-slate-200 mb-6 overflow-x-auto">
+        <div className="border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto">
           <nav className="flex space-x-6 text-sm font-medium whitespace-nowrap min-w-max">
             <button
               onClick={() => setActiveTab('overview')}
               className={`pb-3 relative transition-colors ${
                 activeTab === 'overview'
-                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-brand-600 dark:text-brand-400 font-semibold border-b-2 border-brand-600 dark:border-brand-400'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               Overview
@@ -329,12 +334,12 @@ export const Classroom = () => {
               onClick={() => setActiveTab('materials')}
               className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
                 activeTab === 'materials'
-                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-brand-600 dark:text-brand-400 font-semibold border-b-2 border-brand-600 dark:border-brand-400'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               <span>Materials</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">
                 {materials.length}
               </span>
             </button>
@@ -342,12 +347,12 @@ export const Classroom = () => {
               onClick={() => setActiveTab('assignments')}
               className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
                 activeTab === 'assignments'
-                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-brand-600 dark:text-brand-400 font-semibold border-b-2 border-brand-600 dark:border-brand-400'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               <span>Assignments</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">
                 {assignments.length}
               </span>
             </button>
@@ -355,12 +360,12 @@ export const Classroom = () => {
               onClick={() => setActiveTab('participants')}
               className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
                 activeTab === 'participants'
-                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-brand-600 dark:text-brand-400 font-semibold border-b-2 border-brand-600 dark:border-brand-400'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               <span>Participants</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">
                 {participants.students?.length || 0}
               </span>
             </button>
@@ -369,12 +374,12 @@ export const Classroom = () => {
                 onClick={() => setActiveTab('attendance')}
                 className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
                   activeTab === 'attendance'
-                    ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'text-brand-600 dark:text-brand-400 font-semibold border-b-2 border-brand-600 dark:border-brand-400'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
                 }`}
               >
                 <span>Attendance</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 text-3xs">
+                <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px]">
                   {attendance.length}
                 </span>
               </button>
@@ -383,8 +388,8 @@ export const Classroom = () => {
               onClick={() => setActiveTab('progress')}
               className={`pb-3 relative transition-colors flex items-center gap-1.5 ${
                 activeTab === 'progress'
-                  ? 'text-brand-600 font-semibold border-b-2 border-brand-600'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-brand-600 dark:text-brand-400 font-semibold border-b-2 border-brand-600 dark:border-brand-400'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               <span>Progress Analytics</span>
@@ -397,38 +402,38 @@ export const Classroom = () => {
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   Classroom Summary
                 </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   {classroom.description || 'No specific instructions provided.'}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="text-3xs text-slate-400 font-semibold uppercase">Subject</span>
-                    <p className="text-xs font-bold text-slate-800 mt-0.5">{classroom.subject}</p>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Subject</span>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">{classroom.subject}</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="text-3xs text-slate-400 font-semibold uppercase">Enrolled Students</span>
-                    <p className="text-xs font-bold text-slate-800 mt-0.5">{participants.students?.length || 0}</p>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Enrolled Students</span>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">{participants.students?.length || 0}</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="text-3xs text-slate-400 font-semibold uppercase">Join Code</span>
-                    <p className="text-xs font-mono font-bold text-brand-600 mt-0.5">{classroom.joinCode}</p>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Join Code</span>
+                    <p className="text-xs font-mono font-bold text-brand-600 dark:text-brand-400 mt-0.5">{classroom.joinCode}</p>
                   </div>
                 </div>
               </div>
 
               {/* Recent Materials & Assignments preview */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Upcoming Assignments
                   </h3>
                   <button
                     onClick={() => setActiveTab('assignments')}
-                    className="text-xs text-brand-600 font-semibold hover:underline"
+                    className="text-xs text-brand-600 dark:text-brand-400 font-semibold hover:underline"
                   >
                     View All
                   </button>
@@ -440,10 +445,10 @@ export const Classroom = () => {
                     {assignments.slice(0, 3).map((a) => (
                       <div
                         key={a._id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-slate-50 text-xs"
+                        className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-xs border border-slate-100 dark:border-slate-700"
                       >
-                        <span className="font-semibold text-slate-800">{a.title}</span>
-                        <span className="text-3xs text-slate-500">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{a.title}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
                           Due {new Date(a.dueDate).toLocaleDateString()}
                         </span>
                       </div>
@@ -455,27 +460,27 @@ export const Classroom = () => {
 
             {/* Right: Teacher details & Danger Zone */}
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4">
                   Instructor
                 </h3>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-sm border border-brand-200">
+                  <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center font-bold text-sm border border-brand-200 dark:border-brand-800">
                     {classroom.teacher?.name?.charAt(0).toUpperCase() || 'T'}
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">{classroom.teacher?.name}</h4>
-                    <p className="text-xs text-slate-500">{classroom.teacher?.email}</p>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{classroom.teacher?.name}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{classroom.teacher?.email}</p>
                   </div>
                 </div>
               </div>
 
               {isClassroomTeacher && (
-                <div className="bg-rose-50/50 p-6 rounded-2xl border border-rose-100">
-                  <h4 className="text-xs font-bold text-rose-900 uppercase tracking-wider mb-1">
+                <div className="bg-rose-50/50 dark:bg-rose-950/20 p-6 rounded-2xl border border-rose-100 dark:border-rose-900/40">
+                  <h4 className="text-xs font-bold text-rose-900 dark:text-rose-300 uppercase tracking-wider mb-1">
                     Danger Zone
                   </h4>
-                  <p className="text-3xs text-rose-600 mb-4">
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mb-4">
                     Deleting this classroom will remove all enrollments, assignments, submissions, and materials.
                   </p>
                   <Button
@@ -497,8 +502,8 @@ export const Classroom = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Learning Materials & Handouts</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Learning Materials & Handouts</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Download syllabus, slides, and lecture notes shared by the instructor.
                 </p>
               </div>
@@ -526,8 +531,8 @@ export const Classroom = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Course Assignments</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Course Assignments</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {isClassroomTeacher
                     ? 'Create assignments, track student submissions, and review grades.'
                     : 'Download assignment briefs, submit your work, and view grades/feedback.'}
@@ -557,26 +562,26 @@ export const Classroom = () => {
         {activeTab === 'participants' && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Classroom Participants</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Classroom Participants</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 View instructor and enrolled student roster.
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-6">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
               {/* Instructor */}
               <div>
-                <span className="text-3xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-2">
                   Instructor
                 </span>
-                <div className="p-3 rounded-xl bg-slate-50 flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center border border-brand-200">
+                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold text-xs flex items-center justify-center border border-brand-200 dark:border-brand-800">
                       {classroom.teacher?.name?.charAt(0).toUpperCase() || 'T'}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-900">{classroom.teacher?.name}</p>
-                      <p className="text-3xs text-slate-400">{classroom.teacher?.email}</p>
+                      <p className="text-xs font-semibold text-slate-900 dark:text-white">{classroom.teacher?.name}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500">{classroom.teacher?.email}</p>
                     </div>
                   </div>
                   <Badge variant="brand" size="sm">
@@ -587,7 +592,7 @@ export const Classroom = () => {
 
               {/* Students */}
               <div>
-                <span className="text-3xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-2">
                   Enrolled Students ({participants.students?.length || 0})
                 </span>
                 {participants.students?.length === 0 ? (
@@ -595,19 +600,19 @@ export const Classroom = () => {
                     No students have enrolled in this classroom yet.
                   </p>
                 ) : (
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
                     {participants.students.map((s) => (
                       <div key={s._id} className="py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs">
                             {s.name?.charAt(0).toUpperCase() || 'S'}
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-slate-800">{s.name}</p>
-                            <p className="text-3xs text-slate-400">{s.email}</p>
+                            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{s.name}</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500">{s.email}</p>
                           </div>
                         </div>
-                        <span className="text-3xs text-slate-400">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
                           Enrolled {new Date(s.enrolledAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -622,8 +627,8 @@ export const Classroom = () => {
         {activeTab === 'attendance' && isClassroomTeacher && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Live Session Attendance Log</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Live Session Attendance Log</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Automatic tracking of student joins, leaves, and cumulative participation durations.
               </p>
             </div>
@@ -635,8 +640,8 @@ export const Classroom = () => {
         {activeTab === 'progress' && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Classroom Progress & Performance</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Classroom Progress & Performance</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isClassroomTeacher
                   ? 'Overview of student attendance and assignment performance across the class.'
                   : 'Your personal attendance rate, turned in assignments, and graded scores.'}

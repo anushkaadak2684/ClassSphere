@@ -3,6 +3,9 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import api from './api';
@@ -71,6 +74,39 @@ export const authService = {
       return res.data;
     } catch (error) {
       console.error('[AuthService Login Error]:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Change user password securely with re-authentication via Firebase Auth
+   */
+  async changePassword(currentPassword, newPassword) {
+    try {
+      const user = auth.currentUser;
+      if (!user || !user.email) {
+        throw new Error('User authentication session not found.');
+      }
+
+      // 1. Re-authenticate with current credentials
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+
+      // 2. Update to new password
+      await updatePassword(user, newPassword);
+
+      // 3. Refresh token
+      const freshToken = await user.getIdToken(true);
+      localStorage.setItem('classsphere_token', freshToken);
+
+      return { success: true, message: 'Password updated successfully.' };
+    } catch (error) {
+      console.error('[AuthService Change Password Error]:', error);
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        throw new Error('Current password is incorrect.');
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error('New password is too weak. Please use at least 6 characters.');
+      }
       throw error;
     }
   },

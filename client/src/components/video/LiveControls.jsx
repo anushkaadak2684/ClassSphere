@@ -9,9 +9,7 @@ import {
   MessageSquare,
   Users,
   PhoneOff,
-  ShieldAlert,
 } from 'lucide-react';
-import Button from '../common/Button';
 
 export const LiveControls = ({
   isAudioEnabled,
@@ -33,21 +31,21 @@ export const LiveControls = ({
   isTeacher = false,
 }) => {
   return (
-    <div className="bg-slate-900 border-t border-slate-800 px-4 py-3 flex items-center justify-between gap-2 shadow-2xl z-30 select-none">
+    <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-2 shadow-xl z-30 select-none transition-colors">
       {/* Left section: Participant count / Info */}
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleParticipants}
           title="Participants"
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
             isParticipantsOpen
-              ? 'bg-brand-600 text-white'
-              : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+              ? 'bg-brand-600 text-white shadow-xs'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
           }`}
         >
           <Users className="w-4 h-4" />
           <span className="hidden sm:inline">People</span>
-          <span className="px-1.5 py-0.2 rounded-full bg-slate-950/60 text-3xs font-semibold">
+          <span className="px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-950/60 text-[10px] font-bold">
             {participantCount}
           </span>
         </button>
@@ -61,7 +59,7 @@ export const LiveControls = ({
           title={isAudioEnabled ? 'Mute Microphone' : 'Unmute Microphone'}
           className={`p-3 rounded-full transition-all duration-150 shadow-md ${
             isAudioEnabled
-              ? 'bg-slate-800 hover:bg-slate-700 text-white'
+              ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white'
               : 'bg-rose-600 hover:bg-rose-700 text-white'
           }`}
         >
@@ -74,7 +72,7 @@ export const LiveControls = ({
           title={isVideoEnabled ? 'Turn Off Camera' : 'Turn On Camera'}
           className={`p-3 rounded-full transition-all duration-150 shadow-md ${
             isVideoEnabled
-              ? 'bg-slate-800 hover:bg-slate-700 text-white'
+              ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white'
               : 'bg-rose-600 hover:bg-rose-700 text-white'
           }`}
         >
@@ -88,7 +86,7 @@ export const LiveControls = ({
           className={`p-3 rounded-full transition-all duration-150 shadow-md ${
             isScreenSharing
               ? 'bg-brand-600 hover:bg-brand-700 text-white ring-2 ring-brand-400'
-              : 'bg-slate-800 hover:bg-slate-700 text-white'
+              : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white'
           }`}
         >
           <MonitorUp className="w-5 h-5" />
@@ -102,56 +100,50 @@ export const LiveControls = ({
             className={`p-3 rounded-full transition-all duration-150 shadow-md ${
               isHandRaised
                 ? 'bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-amber-300'
-                : 'bg-slate-800 hover:bg-slate-700 text-white'
+                : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white'
             }`}
           >
             <Hand className="w-5 h-5" />
           </button>
         )}
+      </div>
 
-        {/* Chat Toggle */}
+      {/* Right section: Chat Toggle & Leave/End Session */}
+      <div className="flex items-center gap-2">
+        {/* Chat Toggle Button */}
         <button
           onClick={onToggleChat}
           title="Open Classroom Chat"
-          className={`relative p-3 rounded-full transition-all duration-150 shadow-md ${
+          className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
             isChatOpen
-              ? 'bg-brand-600 text-white'
-              : 'bg-slate-800 hover:bg-slate-700 text-white'
+              ? 'bg-brand-600 text-white shadow-xs'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
           }`}
         >
-          <MessageSquare className="w-5 h-5" />
-          {!isChatOpen && unreadChatCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full text-3xs font-bold flex items-center justify-center animate-pulse">
-              {unreadChatCount}
-            </span>
+          <MessageSquare className="w-4 h-4" />
+          <span className="hidden sm:inline">Chat</span>
+          {unreadChatCount > 0 && !isChatOpen && (
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute -top-0.5 -right-0.5" />
           )}
         </button>
-      </div>
 
-      {/* Right section: Leave / End Class */}
-      <div className="flex items-center gap-2">
+        {/* Leave or End Class Button */}
         {isTeacher ? (
-          <Button
-            variant="danger"
-            size="sm"
+          <button
             onClick={onEndClass}
-            icon={PhoneOff}
-            className="text-xs bg-rose-600 hover:bg-rose-700 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors"
           >
+            <PhoneOff className="w-4 h-4" />
             <span className="hidden sm:inline">End Class</span>
-            <span className="sm:hidden">End</span>
-          </Button>
+          </button>
         ) : (
-          <Button
-            variant="danger"
-            size="sm"
+          <button
             onClick={onLeaveClass}
-            icon={PhoneOff}
-            className="text-xs bg-rose-600 hover:bg-rose-700 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors"
           >
+            <PhoneOff className="w-4 h-4" />
             <span className="hidden sm:inline">Leave</span>
-            <span className="sm:hidden">Exit</span>
-          </Button>
+          </button>
         )}
       </div>
     </div>

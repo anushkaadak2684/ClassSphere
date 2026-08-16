@@ -5,6 +5,10 @@ import Landing from '../pages/Landing';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
+import MyClasses from '../pages/MyClasses';
+import AssignmentsPage from '../pages/AssignmentsPage';
+import StudentsPage from '../pages/StudentsPage';
+import ProgressPage from '../pages/ProgressPage';
 import Classroom from '../pages/Classroom';
 import LiveClassroom from '../pages/LiveClassroom';
 import Profile from '../pages/Profile';
@@ -23,6 +27,10 @@ export const AppRoutes = () => {
       {/* Protected Application Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/my-classes" element={<MyClasses />} />
+        <Route path="/assignments" element={<AssignmentsPage />} />
+        <Route path="/students" element={<StudentsPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
         <Route path="/classrooms/:id" element={<Classroom />} />
         <Route path="/classrooms/:id/live" element={<LiveClassroom />} />
         <Route path="/profile" element={<Profile />} />

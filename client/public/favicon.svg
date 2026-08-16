@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <rect width="48" height="48" rx="12" fill="url(#brandGrad)"/>
+  <defs>
+    <linearGradient id="brandGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <!-- Graduation Cap -->
+  <path d="M24 12L39 19.5L24 27L9 19.5L24 12Z" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 22V31.5C14 31.5 17 35 24 35C31 35 34 31.5 34 31.5V22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M39 20V30" stroke="#93C5FD" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="39" cy="31" r="1.5" fill="#93C5FD"/>
+</svg>

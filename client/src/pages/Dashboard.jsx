@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  Plus,
-  LogIn,
   BookOpen,
   Users,
   Video,
@@ -10,11 +8,9 @@ import {
   RefreshCw,
   FileCheck2,
   BarChart3,
-  Calendar,
-  Layers,
-  ArrowUpRight,
-  Clock,
-  CheckCircle2,
+  ArrowRight,
+  Plus,
+  LogIn,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import classroomService from '../services/classroom.service';
@@ -29,19 +25,12 @@ import EmptyState from '../components/common/EmptyState';
 
 export const Dashboard = () => {
   const { user, isTeacher, isStudent } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-
   const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
-
-  // Tab from query string
-  const searchParams = new URLSearchParams(location.search);
-  const activeTab = searchParams.get('tab') || 'overview';
 
   const fetchClassrooms = async () => {
     try {
@@ -101,7 +90,7 @@ export const Dashboard = () => {
           onClick={() => setIsJoinOpen(true)}
           className="shadow-xs text-xs sm:text-sm"
         >
-          Join Classroom
+          Join with Code
         </Button>
       )}
     </div>
@@ -109,21 +98,21 @@ export const Dashboard = () => {
 
   return (
     <AppLayout
-      title={isTeacher ? 'Teacher Dashboard' : 'Student Dashboard'}
-      subtitle={activeTab === 'overview' ? 'Overview' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+      title={isTeacher ? 'Faculty Dashboard' : 'Student Dashboard'}
+      subtitle="Overview"
       actions={topbarActions}
     >
       {/* Welcome Banner */}
-      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-xs mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-colors">
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100 text-brand-700 text-xs font-semibold mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/60 border border-brand-100 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-semibold mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{isTeacher ? 'Faculty Portal' : 'Student Workspace'}</span>
+            <span>{isTeacher ? 'Faculty Overview' : 'Student Overview'}</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {getGreeting()} {user?.name ? user.name : ''}!
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1.5 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-2xl leading-relaxed">
             {isTeacher
               ? 'Manage your academic subjects, initiate live interactive WebRTC video lectures, post materials, and grade coursework.'
               : 'Access your enrolled classes, attend live interactive lectures, review materials, and track your coursework progress.'}
@@ -131,245 +120,138 @@ export const Dashboard = () => {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto relative z-10 shrink-0">
-          {isTeacher ? (
+          <Link to="/my-classes" className="w-full md:w-auto">
             <Button
-              variant="primary"
-              size="lg"
-              icon={Plus}
-              onClick={() => setIsCreateOpen(true)}
-              className="w-full md:w-auto shadow-md shadow-brand-500/10"
+              variant="outline"
+              size="md"
+              icon={ArrowRight}
+              className="w-full md:w-auto bg-white/80 dark:bg-slate-800/80"
             >
-              New Classroom
+              {isTeacher ? 'Manage Classrooms' : 'View My Classes'}
             </Button>
-          ) : (
-            <Button
-              variant="primary"
-              size="lg"
-              icon={LogIn}
-              onClick={() => setIsJoinOpen(true)}
-              className="w-full md:w-auto shadow-md shadow-brand-500/10"
-            >
-              Join with Code
-            </Button>
-          )}
+          </Link>
         </div>
       </div>
 
       {/* Database-Backed Metrics Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
         {/* Metric 1: Total Classrooms */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between transition-colors">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {isTeacher ? 'My Classrooms' : 'Enrolled Classes'}
             </span>
-            <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{totalClassrooms}</p>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">
+            <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">{totalClassrooms}</p>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
               {totalClassrooms === 1 ? '1 active subject' : `${totalClassrooms} active subjects`}
             </span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 text-brand-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 border border-brand-100 dark:border-brand-800 text-brand-600 dark:text-brand-400 flex items-center justify-center">
             <BookOpen className="w-6 h-6" />
           </div>
         </div>
 
         {/* Metric 2: Live Sessions */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between transition-colors">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Live Lectures</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Live Lectures</span>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">{liveClassroomsCount}</p>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{liveClassroomsCount}</p>
               {liveClassroomsCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 rounded-full border border-emerald-200 dark:border-emerald-800">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Now
                 </span>
               )}
             </div>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
               {liveClassroomsCount === 0 ? 'No live session active' : `${liveClassroomsCount} session in progress`}
             </span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <Video className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Metric 3: Students / Quick Info */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between sm:col-span-2 lg:col-span-1">
+        {/* Metric 3: Students / Network */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between sm:col-span-2 lg:col-span-1 transition-colors">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {isTeacher ? 'Total Enrolled Students' : 'Academic Network'}
             </span>
-            <p className="text-2xl sm:text-3xl font-black text-slate-900">
+            <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
               {isTeacher ? totalEnrolledStudents : totalClassrooms > 0 ? 'Connected' : 'Ready'}
             </p>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
               {isTeacher ? 'Across all your classrooms' : 'Real-time database synchronized'}
             </span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-800 text-purple-600 dark:text-purple-400 flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
         </div>
       </div>
 
-      {/* Main Content Area Based on Active Tab */}
-      {loading ? (
-        <div className="py-16 flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-200/80">
-          <Loader size="lg" text="Retrieving classrooms from database..." />
-        </div>
-      ) : error ? (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80">
-          <ErrorMessage message={error} onRetry={fetchClassrooms} />
-        </div>
-      ) : activeTab === 'overview' || activeTab === 'classrooms' ? (
-        <div>
-          {/* Section Header */}
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                {isTeacher ? 'My Active Classrooms' : 'My Enrolled Classes'}
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {isTeacher
-                  ? 'Access live teaching theater, materials repository, and student assignments.'
-                  : 'Join live video lectures, download course handouts, and view assignment feedback.'}
-              </p>
-            </div>
-            <button
-              onClick={fetchClassrooms}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Refresh classrooms"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
+      {/* Main Content: Overview Classroom Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              {isTeacher ? 'Active Classrooms' : 'Enrolled Subjects'}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {isTeacher
+                ? 'Quick access to your classrooms and live video sessions.'
+                : 'Join active lectures and access course materials.'}
+            </p>
           </div>
-
-          {/* Classrooms Grid or Clean Empty State */}
-          {classrooms.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-12">
-              <EmptyState
-                icon={BookOpen}
-                title={isTeacher ? 'No classrooms created yet' : 'No classes enrolled yet'}
-                description={
-                  isTeacher
-                    ? 'Get started by creating your first virtual classroom. You can share the generated 6-character code with your students.'
-                    : 'You have not joined any classrooms yet. Enter the classroom code provided by your teacher to get started.'
-                }
-                action={
-                  isTeacher ? (
-                    <Button variant="primary" size="md" icon={Plus} onClick={() => setIsCreateOpen(true)}>
-                      Create First Classroom
-                    </Button>
-                  ) : (
-                    <Button variant="primary" size="md" icon={LogIn} onClick={() => setIsJoinOpen(true)}>
-                      Join with Classroom Code
-                    </Button>
-                  )
-                }
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {classrooms.map((classroom) => (
-                <ClassroomCard key={classroom._id} classroom={classroom} />
-              ))}
-            </div>
-          )}
+          <button
+            onClick={fetchClassrooms}
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            title="Refresh classrooms"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
-      ) : activeTab === 'assignments' ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8">
-          <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Assignments Hub</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Select any classroom to review, submit, or grade assignments.
-              </p>
-            </div>
-          </div>
 
-          {classrooms.length === 0 ? (
+        {loading ? (
+          <div className="py-16 flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 transition-colors">
+            <Loader size="lg" text="Retrieving classrooms from database..." />
+          </div>
+        ) : error ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800">
+            <ErrorMessage message={error} onRetry={fetchClassrooms} />
+          </div>
+        ) : classrooms.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 transition-colors">
             <EmptyState
-              icon={FileCheck2}
-              title="No classrooms available"
-              description="Join or create a classroom to access assignments."
+              icon={BookOpen}
+              title={isTeacher ? 'No classrooms created yet' : 'No classes enrolled yet'}
+              description={
+                isTeacher
+                  ? 'Get started by creating your first virtual classroom. Share the generated 6-character code with your students.'
+                  : 'You have not joined any classrooms yet. Enter the classroom code provided by your teacher to get started.'
+              }
+              action={
+                isTeacher ? (
+                  <Button variant="primary" size="md" icon={Plus} onClick={() => setIsCreateOpen(true)}>
+                    Create First Classroom
+                  </Button>
+                ) : (
+                  <Button variant="primary" size="md" icon={LogIn} onClick={() => setIsJoinOpen(true)}>
+                    Join with Code
+                  </Button>
+                )
+              }
             />
-          ) : (
-            <div className="space-y-4">
-              {classrooms.map((c) => (
-                <div
-                  key={c._id}
-                  className="p-4 rounded-xl border border-slate-200 hover:border-brand-200 hover:bg-slate-50/50 transition-all flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-sm">
-                      <BookOpen className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">{c.name}</h4>
-                      <p className="text-xs text-slate-500">{c.subject || 'General Academic'}</p>
-                    </div>
-                  </div>
-                  <Link to={`/classrooms/${c._id}?tab=assignments`}>
-                    <Button variant="outline" size="sm" icon={ArrowUpRight}>
-                      View Assignments
-                    </Button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'progress' ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8">
-          <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                {isTeacher ? 'Classroom Progress & Roster' : 'My Academic Progress'}
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {isTeacher
-                  ? 'Inspect performance and attendance breakdowns per classroom.'
-                  : 'Track your attendance percentage, assignment grades, and submission completion.'}
-              </p>
-            </div>
           </div>
-
-          {classrooms.length === 0 ? (
-            <EmptyState
-              icon={BarChart3}
-              title="No progress data available"
-              description="Progress metrics are calculated automatically once you participate in a classroom."
-            />
-          ) : (
-            <div className="space-y-4">
-              {classrooms.map((c) => (
-                <div
-                  key={c._id}
-                  className="p-4 rounded-xl border border-slate-200 hover:border-brand-200 hover:bg-slate-50/50 transition-all flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                      <BarChart3 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">{c.name}</h4>
-                      <p className="text-xs text-slate-500">
-                        {c.subject || 'General'} • Code: <span className="font-mono font-bold text-brand-700">{c.joinCode}</span>
-                      </p>
-                    </div>
-                  </div>
-                  <Link to={`/classrooms/${c._id}?tab=progress`}>
-                    <Button variant="outline" size="sm" icon={ArrowUpRight}>
-                      Open Progress Analytics
-                    </Button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : null}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {classrooms.map((classroom) => (
+              <ClassroomCard key={classroom._id} classroom={classroom} isTeacher={isTeacher} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
       {isCreateOpen && (
