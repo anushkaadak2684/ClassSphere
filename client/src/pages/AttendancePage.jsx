@@ -18,8 +18,10 @@ import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState';
+import { motion } from 'framer-motion';
 
 export const AttendancePage = () => {
+
   const { user } = useAuth();
   const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,74 +129,99 @@ export const AttendancePage = () => {
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Attendance Rate
-            </span>
-            <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
-              {overall.attendancePercentage}%
-            </p>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
-              Across all enrolled classes
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 border border-brand-100 dark:border-brand-800 text-brand-600 dark:text-brand-400 flex items-center justify-center">
-            <CalendarCheck className="w-6 h-6" />
-          </div>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+        >
+          <Card className="p-5 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Attendance Rate
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
+                {overall.attendancePercentage}%
+              </p>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
+                Across all enrolled classes
+              </span>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 border border-brand-100 dark:border-brand-800 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+          </Card>
+        </motion.div>
 
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Total Sessions Held
-            </span>
-            <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
-              {overall.totalSessions}
-            </p>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
-              Unique lecture dates
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-            <Clock className="w-6 h-6" />
-          </div>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Card className="p-5 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Total Sessions Held
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
+                {overall.totalSessions}
+              </p>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
+                Unique lecture dates
+              </span>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <Clock className="w-6 h-6" />
+            </div>
+          </Card>
+        </motion.div>
 
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Attended Sessions
-            </span>
-            <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-              {overall.attendedSessions}
-            </p>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
-              Present or active
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+        >
+          <Card className="p-5 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Attended Sessions
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                {overall.attendedSessions}
+              </p>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
+                Present or active
+              </span>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+          </Card>
+        </motion.div>
 
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Missed Sessions
-            </span>
-            <p className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 mt-1">
-              {overall.missedSessions}
-            </p>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
-              Absent dates
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <Card className="p-5 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Missed Sessions
+              </span>
+              <p className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 mt-1">
+                {overall.missedSessions}
+              </p>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
+                Absent dates
+              </span>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+          </Card>
+        </motion.div>
       </div>
+
 
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 transition-colors">

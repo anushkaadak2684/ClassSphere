@@ -32,8 +32,10 @@ import AssignmentList from '../components/assignments/AssignmentList';
 import CreateAssignmentModal from '../components/assignments/CreateAssignmentModal';
 import ProgressView from '../components/progress/ProgressView';
 import { useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 export const Classroom = () => {
+
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -399,8 +401,15 @@ export const Classroom = () => {
         </div>
 
         {/* Tab Content */}
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -654,7 +663,9 @@ export const Classroom = () => {
             />
           </div>
         )}
+        </motion.div>
       </div>
+
 
       {/* Upload Material Modal */}
       <MaterialUpload

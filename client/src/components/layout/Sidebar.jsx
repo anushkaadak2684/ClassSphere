@@ -15,7 +15,10 @@ import {
 import useAuth from '../../hooks/useAuth';
 import ThemeToggle from '../common/ThemeToggle';
 
+import { motion, AnimatePresence } from 'framer-motion';
+
 export const Sidebar = ({ isOpen, onClose }) => {
+
   const { user, isTeacher, isStudent, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -207,16 +210,32 @@ export const Sidebar = ({ isOpen, onClose }) => {
       </aside>
 
       {/* Mobile Drawer Overlay */}
-      {isOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={onClose} />
-          <div className="relative w-72 max-w-[85vw] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
-            {sidebarContent}
+      <AnimatePresence>
+        {isOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+              onClick={onClose}
+            />
+            <motion.div
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+              className="relative w-72 max-w-[85vw] h-full shadow-2xl z-10"
+            >
+              {sidebarContent}
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 };
 
 export default Sidebar;
+

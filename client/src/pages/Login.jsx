@@ -5,6 +5,7 @@ import useAuth from '../hooks/useAuth';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import ThemeToggle from '../components/common/ThemeToggle';
+import { motion } from 'framer-motion';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -51,7 +52,12 @@ export const Login = () => {
         <ThemeToggle />
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="sm:mx-auto sm:w-full sm:max-w-md"
+      >
         {/* Brand Header */}
         <div className="flex justify-center mb-4">
           <Link to="/" className="flex items-center gap-3 group">
@@ -70,15 +76,21 @@ export const Login = () => {
         <p className="mt-1.5 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400">
           Enter your academic credentials to access your classrooms
         </p>
-      </div>
+      </motion.div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.08 }}
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+      >
         <div className="bg-white dark:bg-slate-900 py-8 px-6 sm:px-10 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-3xl border border-slate-200/80 dark:border-slate-800 transition-colors">
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300 font-medium">
               {error}
             </div>
           )}
+
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
@@ -138,8 +150,9 @@ export const Login = () => {
             </Link>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
+
   );
 };
 

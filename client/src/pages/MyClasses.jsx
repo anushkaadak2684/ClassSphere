@@ -11,7 +11,10 @@ import Loader from '../components/common/Loader';
 import ErrorMessage from '../components/common/ErrorMessage';
 import EmptyState from '../components/common/EmptyState';
 
+import { motion } from 'framer-motion';
+
 export const MyClasses = () => {
+
   const { user, isTeacher, isStudent } = useAuth();
   const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -161,10 +164,18 @@ export const MyClasses = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClassrooms.map((c) => (
-            <ClassroomCard key={c._id} classroom={c} isTeacher={isTeacher} />
+          {filteredClassrooms.map((c, idx) => (
+            <motion.div
+              key={c._id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: idx * 0.05 }}
+            >
+              <ClassroomCard classroom={c} isTeacher={isTeacher} />
+            </motion.div>
           ))}
         </div>
+
       )}
 
       {/* Modals */}

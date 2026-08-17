@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   GraduationCap,
   Video,
@@ -14,8 +15,10 @@ import {
   Zap,
   Layers,
   Laptop,
-  Check,
   Compass,
+  Database,
+  Cloud,
+  Cpu,
   Lock,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
@@ -131,7 +134,12 @@ export const Landing = () => {
       {/* Hero Section */}
       <section className="relative pt-16 sm:pt-24 pb-20 overflow-hidden bg-gradient-to-b from-white via-slate-50 to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 border-b border-slate-200/80 dark:border-slate-800 bg-grid-pattern bg-glow-brand">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="max-w-3xl mx-auto text-center animate-slide-up">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="max-w-3xl mx-auto text-center"
+          >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 dark:bg-brand-950/70 border border-brand-200/80 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-bold mb-6 shadow-xs">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Modern Real-Time Virtual Education Platform</span>
@@ -187,10 +195,15 @@ export const Landing = () => {
                 MongoDB Atlas Synchronized
               </span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Hero Interface Preview Card */}
-          <div className="mt-14 max-w-5xl mx-auto rounded-3xl p-2 bg-slate-900/5 dark:bg-white/5 border border-slate-200/80 dark:border-slate-800 shadow-2xl animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
+            className="mt-14 max-w-5xl mx-auto rounded-3xl p-2 bg-slate-900/5 dark:bg-white/5 border border-slate-200/80 dark:border-slate-800 shadow-2xl"
+          >
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-inner">
               {/* Window Header Mockup */}
               <div className="bg-slate-100 dark:bg-slate-800/80 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -252,14 +265,20 @@ export const Landing = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section id="features" className="py-20 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+      <section id="features" className="scroll-mt-16 sm:scroll-mt-20 py-20 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.4 }}
+            className="text-center max-w-2xl mx-auto mb-16"
+          >
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-2">Capabilities</h2>
             <p className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
               Everything Needed for Modern Virtual Education
@@ -267,13 +286,18 @@ export const Landing = () => {
             <p className="text-slate-600 dark:text-slate-300 mt-3 text-sm leading-relaxed">
               Engineered with clean architectural separation across real-time signaling, cloud file storage, and persistent database tracking.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((item, idx) => (
-              <div
+              <motion.div
                 key={idx}
-                className="bg-white dark:bg-slate-950 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs card-hover group"
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.35, delay: idx * 0.06 }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                className="bg-white dark:bg-slate-950 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs group"
               >
                 <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-5 ${item.color}`}>
                   <item.icon className="w-6 h-6" />
@@ -284,25 +308,38 @@ export const Landing = () => {
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed font-normal">
                   {item.description}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 bg-slate-50 dark:bg-slate-950 border-b border-slate-200/80 dark:border-slate-800 bg-dots-pattern transition-colors">
+      <section id="how-it-works" className="scroll-mt-16 sm:scroll-mt-20 py-20 bg-slate-50 dark:bg-slate-950 border-b border-slate-200/80 dark:border-slate-800 bg-dots-pattern transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.4 }}
+            className="text-center max-w-2xl mx-auto mb-16"
+          >
             <h2 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-2">Workflow</h2>
             <p className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
               Built Specifically for Teachers and Students
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             {/* Teacher Workflow */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xs card-hover">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.4 }}
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xs"
+            >
               <div className="flex items-center gap-3 pb-6 border-b border-slate-100 dark:border-slate-800">
                 <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center font-bold">
                   <Laptop className="w-5 h-5" />
@@ -344,10 +381,17 @@ export const Landing = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Student Workflow */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xs card-hover">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xs"
+            >
               <div className="flex items-center gap-3 pb-6 border-b border-slate-100 dark:border-slate-800">
                 <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold">
                   <GraduationCap className="w-5 h-5" />
@@ -389,53 +433,161 @@ export const Landing = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Platform Architecture Section */}
-      <section id="platform" className="py-20 bg-white dark:bg-slate-900 transition-colors">
+      {/* Production Stack Section — Full width, no outer floating box */}
+      <section id="platform" className="scroll-mt-16 sm:scroll-mt-20 w-full py-20 bg-gradient-to-b from-white via-indigo-50/30 to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 border-b border-slate-200/80 dark:border-slate-800 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-8 sm:p-12 text-white shadow-xl border border-slate-800">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-bold mb-4 border border-brand-500/30">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.45 }}
+              className="lg:col-span-7"
+            >
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 text-xs font-bold mb-4 border border-brand-200 dark:border-brand-800 shadow-xs">
                 <Compass className="w-3.5 h-3.5" />
-                Production Stack
+                <span>Production Architecture</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.18]">
                 Engineered for Academic Integrity & Real-Time Performance
               </h2>
-              <p className="text-slate-300 mt-4 text-sm sm:text-base leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-300 mt-4 text-sm sm:text-base leading-relaxed">
                 ClassSphere combines Firebase Client & Admin SDK token verification, persistent MongoDB Atlas collections, Cloudinary secure document storage, and peer-to-peer WebRTC mesh streaming.
               </p>
 
-              <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
-                  <span className="block text-xl font-black text-white">WebRTC</span>
-                  <span className="text-xs text-slate-400 mt-1 block">Live Video Mesh</span>
+              {/* Stack Pills Grid */}
+              <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+                <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-xs transition-colors">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 mx-auto mb-2 flex items-center justify-center font-bold">
+                    <Video className="w-4 h-4" />
+                  </div>
+                  <span className="block text-sm font-black text-slate-900 dark:text-white">WebRTC</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">Live Video Mesh</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
-                  <span className="block text-xl font-black text-white">Socket.io</span>
-                  <span className="text-xs text-slate-400 mt-1 block">Presence & Chat</span>
+
+                <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-xs transition-colors">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 mx-auto mb-2 flex items-center justify-center font-bold">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <span className="block text-sm font-black text-slate-900 dark:text-white">Socket.io</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">Presence & Chat</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
-                  <span className="block text-xl font-black text-white">MongoDB</span>
-                  <span className="text-xs text-slate-400 mt-1 block">Mongoose Schemas</span>
+
+                <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-xs transition-colors">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 mx-auto mb-2 flex items-center justify-center font-bold">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <span className="block text-sm font-black text-slate-900 dark:text-white">MongoDB</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">Atlas Schemas</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl">
-                  <span className="block text-xl font-black text-white">Firebase</span>
-                  <span className="text-xs text-slate-400 mt-1 block">Admin Token Auth</span>
+
+                <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-xs transition-colors">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 mx-auto mb-2 flex items-center justify-center font-bold">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <span className="block text-sm font-black text-slate-900 dark:text-white">Firebase</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">Admin Tokens</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
+
+            {/* Right Graphic / Interactive Production Diagram */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.45, delay: 0.1 }}
+              className="lg:col-span-5"
+            >
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xl space-y-5 transition-colors">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                      System Topology
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    v1.0 Production
+                  </span>
+                </div>
+
+                {/* Node Item 1: Client Layer */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center font-bold">
+                      <Laptop className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">React 18 + Vite Frontend</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500">TailwindCSS, Framer Motion, SPA Router</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Client Side</span>
+                </div>
+
+                {/* Node Item 2: Node Signaling */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold">
+                      <Cpu className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">Node.js / Express Server</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500">WebSockets, WebRTC SDP Signaling</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">Signaling</span>
+                </div>
+
+                {/* Node Item 3: Storage & Database */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+                      <Database className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">MongoDB Atlas + Cloudinary</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500">Single Source of Truth, File Storage</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Database</span>
+                </div>
+
+                {/* Node Item 4: Auth & RBAC */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">Firebase Admin Verification</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500">Role-Based Access (Teacher vs Student)</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">Security</span>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Redesigned Bottom CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-brand-600 via-indigo-600 to-indigo-700 dark:from-brand-700 dark:via-indigo-800 dark:to-slate-900 text-white text-center transition-colors">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Redesigned Bottom CTA Section — Spans full width */}
+      <section className="w-full py-20 bg-gradient-to-r from-brand-600 via-indigo-600 to-indigo-700 dark:from-brand-800 dark:via-indigo-900 dark:to-slate-950 text-white text-center transition-colors">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+          className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
+        >
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
             Ready to get started?
           </h2>
@@ -445,44 +597,58 @@ export const Landing = () => {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/register" className="w-full sm:w-auto">
               <Button
-                variant="secondary"
+                variant="outline"
                 size="xl"
-                className="w-full sm:w-auto bg-white text-brand-700 hover:bg-slate-100 font-bold shadow-lg shadow-black/10"
+                className="w-full sm:w-auto bg-white/90 dark:bg-slate-900/90 font-bold shadow-xs"
               >
                 Create Free Account
               </Button>
             </Link>
-            <Link to="/login" className="w-full sm:w-auto">
+            <a href="#features" className="w-full sm:w-auto">
               <Button
-                variant="outline"
+                variant="primary"
                 size="xl"
-                className="w-full sm:w-auto text-white border-white/70 hover:bg-white/15 dark:bg-transparent font-bold"
+                icon={ArrowRight}
+                className="w-full sm:w-auto shadow-lg shadow-brand-500/25 font-bold"
               >
-                Sign In to ClassSphere
+                Explore Capabilities
               </Button>
-            </Link>
+            </a>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 dark:bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-xs transition-colors">
+
+
+      {/* Footer — White in light theme, dark in dark theme */}
+      <footer className="bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 py-12 border-t border-slate-200 dark:border-slate-800 text-xs transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-700 flex items-center justify-center text-white font-bold shadow-xs">
               <GraduationCap className="w-4 h-4" />
             </div>
-            <span className="text-base font-bold text-white">ClassSphere</span>
+            <span className="text-base font-bold text-slate-900 dark:text-white">ClassSphere</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-6 font-medium">
-            <Link to="/login" className="hover:text-white transition-colors">Sign In to ClassSphere</Link>
-            <Link to="/register" className="hover:text-white transition-colors">Create Account</Link>
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">Workflow</a>
+            <Link to="/login" className="hover:text-brand-600 dark:hover:text-white transition-colors">
+              Sign In to ClassSphere
+            </Link>
+            <Link to="/register" className="hover:text-brand-600 dark:hover:text-white transition-colors">
+              Create Account
+            </Link>
+            <a href="#features" className="hover:text-brand-600 dark:hover:text-white transition-colors">
+              Features
+            </a>
+            <a href="#how-it-works" className="hover:text-brand-600 dark:hover:text-white transition-colors">
+              Workflow
+            </a>
+            <a href="#platform" className="hover:text-brand-600 dark:hover:text-white transition-colors">
+              Platform Architecture
+            </a>
           </div>
 
-          <div className="text-center md:text-right text-slate-500">
+          <div className="text-center md:text-right text-slate-400 dark:text-slate-500">
             <p>© {new Date().getFullYear()} ClassSphere Platform. All rights reserved.</p>
           </div>
         </div>

@@ -6,8 +6,10 @@ import AppLayout from '../components/layout/AppLayout';
 import ProgressView from '../components/progress/ProgressView';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState';
+import { motion } from 'framer-motion';
 
 export const ProgressPage = () => {
+
   const { user, isTeacher, isStudent } = useAuth();
   const [classrooms, setClassrooms] = useState([]);
   const [selectedClassroomId, setSelectedClassroomId] = useState(null);
@@ -73,7 +75,12 @@ export const ProgressPage = () => {
       ) : (
         <div className="space-y-6">
           {/* Classroom Selector Pills */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors"
+          >
             <div className="flex items-center gap-2 overflow-x-auto w-full pb-1 sm:pb-0">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap mr-2">
                 Select Class:
@@ -100,7 +107,7 @@ export const ProgressPage = () => {
             >
               <RefreshCw className="w-4 h-4" />
             </button>
-          </div>
+          </motion.div>
 
           {/* Progress Analytics Card */}
           {progLoading ? (
@@ -108,7 +115,13 @@ export const ProgressPage = () => {
               <Loader size="lg" text="Recalculating analytics..." />
             </div>
           ) : progressData ? (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xs transition-colors">
+            <motion.div
+              key={selectedClassroomId}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xs transition-colors"
+            >
               <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -121,13 +134,14 @@ export const ProgressPage = () => {
               </div>
 
               <ProgressView progressData={progressData} isTeacher={isTeacher} />
-            </div>
+            </motion.div>
           ) : (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-8 text-center text-xs text-slate-400">
               No progress data generated for this classroom yet.
             </div>
           )}
         </div>
+
       )}
     </AppLayout>
   );

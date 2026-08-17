@@ -24,7 +24,10 @@ import CreateAssignmentModal from '../components/assignments/CreateAssignmentMod
 import SubmitAssignmentModal from '../components/assignments/SubmitAssignmentModal';
 import SubmissionsListModal from '../components/assignments/SubmissionsListModal';
 
+import { motion } from 'framer-motion';
+
 export const AssignmentsPage = () => {
+
   const { user, isTeacher, isStudent } = useAuth();
   const [classrooms, setClassrooms] = useState([]);
   const [assignmentsByClass, setAssignmentsByClass] = useState([]);
@@ -178,9 +181,12 @@ export const AssignmentsPage = () => {
                   <p className="text-xs text-slate-400 py-4 text-center">No assignments created in this classroom.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {group.assignments.map((assign) => (
-                      <div
+                    {group.assignments.map((assign, aIdx) => (
+                      <motion.div
                         key={assign._id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, delay: aIdx * 0.04 }}
                         className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:border-brand-200 dark:hover:border-brand-800 transition-all flex flex-col justify-between"
                       >
                         <div>
@@ -248,9 +254,10 @@ export const AssignmentsPage = () => {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
+
                 )}
               </div>
             );

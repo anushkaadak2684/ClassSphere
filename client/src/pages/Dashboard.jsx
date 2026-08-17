@@ -23,6 +23,8 @@ import Loader from '../components/common/Loader';
 import ErrorMessage from '../components/common/ErrorMessage';
 import EmptyState from '../components/common/EmptyState';
 
+import { motion } from 'framer-motion';
+
 export const Dashboard = () => {
   const { user, isTeacher, isStudent } = useAuth();
   const [classrooms, setClassrooms] = useState([]);
@@ -103,7 +105,12 @@ export const Dashboard = () => {
       actions={topbarActions}
     >
       {/* Welcome Banner */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-colors">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-colors"
+      >
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/60 border border-brand-100 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-semibold mb-3">
             <Sparkles className="w-3.5 h-3.5" />
@@ -131,12 +138,17 @@ export const Dashboard = () => {
             </Button>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {/* Database-Backed Metrics Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
         {/* Metric 1: Total Classrooms */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between transition-colors">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between transition-colors"
+        >
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {isTeacher ? 'My Classrooms' : 'Enrolled Classes'}
@@ -149,10 +161,15 @@ export const Dashboard = () => {
           <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 border border-brand-100 dark:border-brand-800 text-brand-600 dark:text-brand-400 flex items-center justify-center">
             <BookOpen className="w-6 h-6" />
           </div>
-        </div>
+        </motion.div>
 
         {/* Metric 2: Live Sessions */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between transition-colors">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between transition-colors"
+        >
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Live Lectures</span>
             <div className="flex items-center gap-2 mt-1">
@@ -170,10 +187,15 @@ export const Dashboard = () => {
           <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <Video className="w-6 h-6" />
           </div>
-        </div>
+        </motion.div>
 
         {/* Metric 3: Students / Network */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between sm:col-span-2 lg:col-span-1 transition-colors">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between sm:col-span-2 lg:col-span-1 transition-colors"
+        >
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {isTeacher ? 'Total Enrolled Students' : 'Academic Network'}
@@ -188,7 +210,7 @@ export const Dashboard = () => {
           <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-800 text-purple-600 dark:text-purple-400 flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Main Content: Overview Classroom Grid */}
@@ -231,27 +253,27 @@ export const Dashboard = () => {
                   ? 'Get started by creating your first virtual classroom. Share the generated 6-character code with your students.'
                   : 'You have not joined any classrooms yet. Enter the classroom code provided by your teacher to get started.'
               }
-              action={
-                isTeacher ? (
-                  <Button variant="primary" size="md" icon={Plus} onClick={() => setIsCreateOpen(true)}>
-                    Create First Classroom
-                  </Button>
-                ) : (
-                  <Button variant="primary" size="md" icon={LogIn} onClick={() => setIsJoinOpen(true)}>
-                    Join with Code
-                  </Button>
-                )
-              }
+              actionLabel={isTeacher ? 'Create First Classroom' : 'Join with Code'}
+              onAction={isTeacher ? () => setIsCreateOpen(true) : () => setIsJoinOpen(true)}
+              actionIcon={isTeacher ? Plus : LogIn}
             />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classrooms.map((classroom) => (
-              <ClassroomCard key={classroom._id} classroom={classroom} isTeacher={isTeacher} />
+            {classrooms.map((classroom, idx) => (
+              <motion.div
+                key={classroom._id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}
+              >
+                <ClassroomCard classroom={classroom} isTeacher={isTeacher} />
+              </motion.div>
             ))}
           </div>
         )}
       </div>
+
 
       {/* Modals */}
       {isCreateOpen && (

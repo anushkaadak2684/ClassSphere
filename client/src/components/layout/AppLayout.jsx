@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Menu, GraduationCap } from 'lucide-react';
 import Sidebar from './Sidebar';
 import ThemeToggle from '../common/ThemeToggle';
@@ -90,12 +91,18 @@ export const AppLayout = ({ children, title, subtitle, actions }) => {
         </header>
 
         {/* Page Body */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <motion.main
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: 'easeOut' }}
+          className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto"
+        >
           {children}
-        </main>
+        </motion.main>
       </div>
     </div>
   );
 };
 
 export default AppLayout;
+

@@ -23,8 +23,10 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Loader from '../components/common/Loader';
 import ThemeToggle from '../components/common/ThemeToggle';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const LiveClassroom = () => {
+
   const { id: classroomId } = useParams();
   const navigate = useNavigate();
   const { user, isTeacher } = useAuth();
@@ -384,41 +386,60 @@ export const LiveClassroom = () => {
         </main>
 
         {/* Collapsible Participants Sidebar */}
-        {isParticipantsOpen && (
-          <aside className="w-full sm:w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col h-full shrink-0 z-30 animate-fade-in shadow-xl transition-colors">
-            <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Live Participants ({participants.length})
-              </h3>
-              <button
-                onClick={() => setIsParticipantsOpen(false)}
-                className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs p-1"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 p-3 overflow-y-auto custom-dark-scrollbar">
-              <ParticipantList
-                participants={participants}
-                currentUserId={user?._id}
-                isTeacher={isClassroomTeacher}
-                onMuteParticipant={handleMuteParticipant}
-                onRemoveParticipant={handleRemoveParticipant}
-              />
-            </div>
-          </aside>
-        )}
+        <AnimatePresence>
+          {isParticipantsOpen && (
+            <motion.aside
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ duration: 0.2 }}
+              className="w-full sm:w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col h-full shrink-0 z-30 shadow-xl transition-colors"
+            >
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Live Participants ({participants.length})
+                </h3>
+                <button
+                  onClick={() => setIsParticipantsOpen(false)}
+                  className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs p-1"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex-1 p-3 overflow-y-auto custom-dark-scrollbar">
+                <ParticipantList
+                  participants={participants}
+                  currentUserId={user?._id}
+                  isTeacher={isClassroomTeacher}
+                  onMuteParticipant={handleMuteParticipant}
+                  onRemoveParticipant={handleRemoveParticipant}
+                />
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
         {/* Collapsible Real-Time Chat Panel */}
-        {isChatOpen && (
-          <ChatPanel
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            currentUserId={user?._id}
-            isTeacher={isClassroomTeacher}
-            onClose={() => setIsChatOpen(false)}
-          />
-        )}
+        <AnimatePresence>
+          {isChatOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ duration: 0.2 }}
+              className="w-full sm:w-80 h-full shrink-0 z-30 shadow-xl"
+            >
+              <ChatPanel
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                currentUserId={user?._id}
+                isTeacher={isClassroomTeacher}
+                onClose={() => setIsChatOpen(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
 
       {/* Bottom Control Bar */}

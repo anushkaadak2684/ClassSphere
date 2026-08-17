@@ -26,8 +26,10 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const StudentsPage = () => {
+
   const { user, isTeacher } = useAuth();
   const [classrooms, setClassrooms] = useState([]);
   const [studentsRoster, setStudentsRoster] = useState([]);
@@ -94,21 +96,26 @@ export const StudentsPage = () => {
   }, [isTeacher]);
 
   const handleOpenStudentDetails = async (studentItem) => {
-    setSelectedStudent(studentItem.student);
-    setSelectedStudentClassroom(studentItem.classroom);
+    const studentObj = studentItem.student || { _id: studentItem._id || studentItem.studentId, name: studentItem.name, email: studentItem.email };
+    const classroomObj = studentItem.classroom || { _id: studentItem.classroomId, name: studentItem.classroomName || 'Classroom' };
+    setSelectedStudent(studentObj);
+    setSelectedStudentClassroom(classroomObj);
     try {
       setLoadingDetails(true);
-      const data = await classroomService.getStudentClassroomDetails(
-        studentItem.classroom._id,
-        studentItem.student._id
-      );
-      setStudentDetails(data);
+      const classId = classroomObj._id || classroomObj;
+      const studentId = studentObj._id || studentObj;
+      if (classId && studentId) {
+        const data = await classroomService.getStudentClassroomDetails(classId, studentId);
+        setStudentDetails(data);
+      } else {
+        throw new Error('Classroom or Student ID missing');
+      }
     } catch (err) {
       console.error('[Student details fetch error]:', err);
       // Fallback with current row data if API details encounter an issue
       setStudentDetails({
-        student: studentItem.student,
-        classroom: studentItem.classroom,
+        student: studentObj,
+        classroom: classroomObj,
         performance: {
           attendancePercentage: studentItem.attendancePercentage || 0,
           attendedSessions: studentItem.attendedSessions || 0,
@@ -125,6 +132,7 @@ export const StudentsPage = () => {
       setLoadingDetails(false);
     }
   };
+
 
   const handleCloseModal = () => {
     setSelectedStudent(null);
@@ -413,194 +421,219 @@ export const StudentsPage = () => {
       )}
 
       {/* INDIVIDUAL STUDENT DETAILS MODAL DRAWER */}
-      {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/40">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center font-bold text-base border border-brand-200 dark:border-brand-800">
-                  {selectedStudent.avatarUrl ? (
-                    <img src={selectedStudent.avatarUrl} alt={selectedStudent.name} className="w-full h-full rounded-2xl object-cover" />
-                  ) : (
-                    selectedStudent.name?.charAt(0).toUpperCase() || 'S'
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.name}</h3>
-                    <Badge variant="brand" size="sm" className="capitalize">{selectedStudent.role || 'Student'}</Badge>
+      <AnimatePresence>
+        {selectedStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+              onClick={handleCloseModal}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10"
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/40">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center font-bold text-base border border-brand-200 dark:border-brand-800">
+                    {selectedStudent.avatarUrl ? (
+                      <img src={selectedStudent.avatarUrl} alt={selectedStudent.name} className="w-full h-full rounded-2xl object-cover" />
+                    ) : (
+                      selectedStudent.name?.charAt(0).toUpperCase() || 'S'
+                    )}
                   </div>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">{selectedStudent.email}</p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.name}</h3>
+                      <Badge variant="brand" size="sm" className="capitalize">{selectedStudent.role || 'Student'}</Badge>
+                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{selectedStudent.email}</p>
+                  </div>
                 </div>
+
+                <button
+                  onClick={handleCloseModal}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <button
-                onClick={handleCloseModal}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-6">
-              {loadingDetails ? (
-                <div className="py-16 flex flex-col items-center justify-center">
-                  <Loader size="md" text="Loading individual performance logs..." />
-                </div>
-              ) : (
-                <>
-                  {/* Classroom Context */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">
-                      Performance in: <strong className="text-slate-900 dark:text-white">{selectedStudentClassroom?.name}</strong>
-                    </span>
-                    <span className="font-semibold text-brand-600 dark:text-brand-400">
-                      {selectedStudentClassroom?.subject}
-                    </span>
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto space-y-6">
+                {loadingDetails ? (
+                  <div className="py-16 flex flex-col items-center justify-center">
+                    <Loader size="md" text="Loading individual performance logs..." />
                   </div>
-
-                  {/* Performance KPI Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Attendance
+                ) : (
+                  <>
+                    {/* Classroom Context */}
+                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Performance in: <strong className="text-slate-900 dark:text-white">{selectedStudentClassroom?.name}</strong>
                       </span>
-                      <p className="text-xl font-black text-slate-900 dark:text-white mt-1">
-                        {studentDetails?.performance?.attendancePercentage || 0}%
-                      </p>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">
-                        {studentDetails?.performance?.attendedSessions || 0}/{studentDetails?.performance?.totalSessions || 0} classes
+                      <span className="font-semibold text-brand-600 dark:text-brand-400">
+                        {selectedStudentClassroom?.subject}
                       </span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Completed
-                      </span>
-                      <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                        {studentDetails?.performance?.completedAssignments || 0}
-                      </p>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">
-                        of {studentDetails?.performance?.totalAssignments || 0} total
-                      </span>
+                    {/* Performance KPI Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          Attendance
+                        </span>
+                        <p className="text-xl font-black text-slate-900 dark:text-white mt-1">
+                          {studentDetails?.performance?.attendancePercentage || 0}%
+                        </p>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          {studentDetails?.performance?.attendedSessions || 0}/{studentDetails?.performance?.totalSessions || 0} classes
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          Completed
+                        </span>
+                        <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                          {studentDetails?.performance?.completedAssignments || 0}
+                        </p>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          of {studentDetails?.performance?.totalAssignments || 0} total
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          Pending
+                        </span>
+                        <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
+                          {studentDetails?.performance?.pendingAssignments || 0}
+                        </p>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">Due assignments</span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          Avg. Marks
+                        </span>
+                        <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+                          {studentDetails?.performance?.averageMarks || 0}%
+                        </p>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          {studentDetails?.performance?.gradedCount || 0} graded
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Pending
-                      </span>
-                      <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
-                        {studentDetails?.performance?.pendingAssignments || 0}
-                      </p>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">Due assignments</span>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Avg. Marks
-                      </span>
-                      <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
-                        {studentDetails?.performance?.averageMarks || 0}%
-                      </p>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">
-                        {studentDetails?.performance?.gradedCount || 0} graded
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Assignment History Section */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
-                      Coursework & Assignment History
-                    </h4>
-                    {!studentDetails?.assignmentHistory || studentDetails.assignmentHistory.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-3">No assignments posted for this classroom yet.</p>
-                    ) : (
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden">
-                        {studentDetails.assignmentHistory.map((item) => (
-                          <div key={item._id} className="p-3.5 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                            <div className="min-w-0">
-                              <span className="font-semibold text-slate-900 dark:text-white block truncate">
-                                {item.title}
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                Due: {new Date(item.dueDate).toLocaleDateString()}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                                item.submissionStatus === 'graded' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' :
-                                item.submissionStatus === 'submitted' ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' :
-                                item.submissionStatus === 'overdue' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800' :
-                                'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                              }`}>
-                                {item.submissionStatus}
-                              </span>
-
-                              {item.marks !== null && (
-                                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                                  {item.marks}/{item.maxMarks}
+                    {/* Assignment History Section */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
+                        Coursework & Assignment History
+                      </h4>
+                      {!studentDetails?.assignmentHistory || studentDetails.assignmentHistory.length === 0 ? (
+                        <p className="text-xs text-slate-400 p-4 text-center rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                          No assignment submissions recorded.
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5 max-h-48 overflow-y-auto">
+                          {studentDetails.assignmentHistory.map((item, aIdx) => (
+                            <div
+                              key={item._id || aIdx}
+                              className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs"
+                            >
+                              <div className="min-w-0">
+                                <span className="font-semibold text-slate-900 dark:text-white truncate block">
+                                  {item.title}
                                 </span>
-                              )}
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                  Due: {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-3 shrink-0">
+                                {item.status === 'graded' ? (
+                                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                    {item.marks}/{item.maxMarks}
+                                  </span>
+                                ) : (
+                                  <span className={`capitalize text-[11px] font-semibold ${
+                                    item.status === 'submitted' ? 'text-brand-600 dark:text-brand-400' : 'text-amber-600 dark:text-amber-400'
+                                  }`}>
+                                    {item.status}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Attendance History Section */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
-                      Session Attendance Log
-                    </h4>
-                    {!studentDetails?.attendanceHistory || studentDetails.attendanceHistory.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-3">No live lecture sessions recorded for this student.</p>
-                    ) : (
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden text-xs">
-                        {studentDetails.attendanceHistory.map((att) => (
-                          <div key={att._id} className="p-3.5 bg-white dark:bg-slate-900 flex items-center justify-between">
-                            <div>
-                              <span className="font-semibold text-slate-900 dark:text-white block">
-                                {new Date(att.sessionDate || att.joinedAt).toLocaleDateString(undefined, {
-                                  weekday: 'short',
-                                  month: 'short',
-                                  day: 'numeric',
-                                })}
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                Duration: {formatDuration(att.duration)}
+                    {/* Attendance Logs Section */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
+                        Live Attendance Participation Logs
+                      </h4>
+                      {!studentDetails?.attendanceHistory || studentDetails.attendanceHistory.length === 0 ? (
+                        <p className="text-xs text-slate-400 p-4 text-center rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                          No live attendance sessions logged.
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5 max-h-48 overflow-y-auto">
+                          {studentDetails.attendanceHistory.map((att, attIdx) => (
+                            <div
+                              key={att._id || attIdx}
+                              className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="font-medium text-slate-800 dark:text-slate-200">
+                                  {att.date ? new Date(att.date).toLocaleDateString() : '—'}
+                                </span>
+                                {att.duration > 0 && (
+                                  <span className="text-[10px] text-slate-400">
+                                    ({formatDuration(att.duration)})
+                                  </span>
+                                )}
+                              </div>
+
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                                att.status === 'present'
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                  : att.status === 'late'
+                                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                  : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60'
+                              }`}>
+                                {att.status}
                               </span>
                             </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
 
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                              att.status === 'present'
-                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                            }`}>
-                              {att.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex justify-end">
-              <Button variant="outline" size="sm" onClick={handleCloseModal}>
-                Close Details
-              </Button>
-            </div>
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex justify-end">
+                <Button variant="outline" size="sm" onClick={handleCloseModal}>
+                  Close Details
+                </Button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
     </AppLayout>
   );
 };
