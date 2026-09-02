@@ -4,6 +4,7 @@ const assignmentController = require('../controllers/assignment.controller');
 const upload = require('../middleware/upload.middleware');
 const { authenticate, requireExistingUser } = require('../middleware/auth.middleware');
 const {
+  validateObjectId,
   authorizeTeacher,
   authorizeStudent,
   authorizeClassroomMember,
@@ -15,6 +16,7 @@ router.use(authenticate, requireExistingUser);
 // Classroom-scoped assignment endpoints
 router.post(
   '/classrooms/:id/assignments',
+  validateObjectId('id'),
   authorizeClassroomOwner,
   upload.single('file'),
   assignmentController.createAssignment
@@ -22,18 +24,20 @@ router.post(
 
 router.get(
   '/classrooms/:id/assignments',
+  validateObjectId('id'),
   authorizeClassroomMember,
   assignmentController.getClassroomAssignments
 );
 
 // Individual assignment endpoints
-router.get('/assignments/:id', assignmentController.getAssignmentById);
-router.put('/assignments/:id', authorizeTeacher, assignmentController.updateAssignment);
-router.delete('/assignments/:id', authorizeTeacher, assignmentController.deleteAssignment);
+router.get('/assignments/:id', validateObjectId('id'), assignmentController.getAssignmentById);
+router.put('/assignments/:id', validateObjectId('id'), authorizeTeacher, assignmentController.updateAssignment);
+router.delete('/assignments/:id', validateObjectId('id'), authorizeTeacher, assignmentController.deleteAssignment);
 
 // Submissions endpoints
 router.post(
   '/assignments/:id/submit',
+  validateObjectId('id'),
   authorizeStudent,
   upload.single('file'),
   assignmentController.submitAssignment
@@ -41,12 +45,14 @@ router.post(
 
 router.get(
   '/assignments/:id/submissions',
+  validateObjectId('id'),
   authorizeTeacher,
   assignmentController.getAssignmentSubmissions
 );
 
 router.get(
   '/assignments/:id/my-submission',
+  validateObjectId('id'),
   authorizeStudent,
   assignmentController.getMySubmission
 );
@@ -54,8 +60,10 @@ router.get(
 // Grading endpoint
 router.put(
   '/submissions/:id/grade',
+  validateObjectId('id'),
   authorizeTeacher,
   assignmentController.gradeSubmission
 );
 
 module.exports = router;
+

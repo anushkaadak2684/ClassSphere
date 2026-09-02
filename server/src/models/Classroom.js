@@ -59,4 +59,7 @@ classroomSchema.virtual('enrollments', {
   foreignField: 'classroom',
 });
 
+classroomSchema.index({ teacher: 1, createdAt: -1 });
+classroomSchema.index({ isLive: 1 });
+
 module.exports = mongoose.model('Classroom', classroomSchema);

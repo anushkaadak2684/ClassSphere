@@ -65,5 +65,8 @@ const submissionSchema = new mongoose.Schema(
 
 // Prevent duplicate submissions per student per assignment
 submissionSchema.index({ assignment: 1, student: 1 }, { unique: true });
+submissionSchema.index({ classroom: 1, student: 1 });
+submissionSchema.index({ classroom: 1, status: 1 });
+submissionSchema.index({ student: 1, status: 1 });
 
 module.exports = mongoose.model('Submission', submissionSchema);

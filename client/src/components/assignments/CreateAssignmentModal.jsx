@@ -33,6 +33,18 @@ export const CreateAssignmentModal = ({ isOpen, onClose, classroomId, onCreated 
       return;
     }
 
+    const selectedDueDate = new Date(dueDate);
+    if (isNaN(selectedDueDate.getTime())) {
+      setError('Please provide a valid due date and time.');
+      return;
+    }
+
+    const parsedMaxMarks = Number(maxMarks);
+    if (isNaN(parsedMaxMarks) || parsedMaxMarks <= 0) {
+      setError('Maximum marks must be a positive number.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -40,8 +52,8 @@ export const CreateAssignmentModal = ({ isOpen, onClose, classroomId, onCreated 
       const formData = new FormData();
       formData.append('title', title.trim());
       formData.append('description', description.trim());
-      formData.append('dueDate', new Date(dueDate).toISOString());
-      formData.append('maxMarks', maxMarks);
+      formData.append('dueDate', selectedDueDate.toISOString());
+      formData.append('maxMarks', parsedMaxMarks);
       if (file) {
         formData.append('file', file);
       }
@@ -60,6 +72,7 @@ export const CreateAssignmentModal = ({ isOpen, onClose, classroomId, onCreated 
       setLoading(false);
     }
   };
+
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Assignment">

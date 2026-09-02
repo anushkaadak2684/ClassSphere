@@ -1,5 +1,20 @@
+const mongoose = require('mongoose');
 const Classroom = require('../models/Classroom');
 const Enrollment = require('../models/Enrollment');
+
+/**
+ * Validates that an ID parameter is a valid MongoDB ObjectId
+ */
+const validateObjectId = (paramName = 'id') => (req, res, next) => {
+  const id = req.params[paramName] || req.body[paramName];
+  if (id && !mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid identifier format for '${paramName}'.`,
+    });
+  }
+  next();
+};
 
 /**
  * Authorize only users with role 'teacher'
@@ -39,6 +54,13 @@ const authorizeClassroomMember = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Classroom ID parameter missing.',
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(classroomId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid classroom ID format.',
       });
     }
 
@@ -97,6 +119,13 @@ const authorizeClassroomOwner = async (req, res, next) => {
       });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(classroomId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid classroom ID format.',
+      });
+    }
+
     const classroom = await Classroom.findById(classroomId);
     if (!classroom) {
       return res.status(404).json({
@@ -125,8 +154,10 @@ const authorizeClassroomOwner = async (req, res, next) => {
 };
 
 module.exports = {
+  validateObjectId,
   authorizeTeacher,
   authorizeStudent,
   authorizeClassroomMember,
   authorizeClassroomOwner,
 };
+

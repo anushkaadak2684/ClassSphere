@@ -184,10 +184,15 @@ const registerClassroomSocketHandlers = (io, socket) => {
     io.to(`classroom:${classroomId}`).emit('classroom:started', { classroomId });
   });
 
-  socket.on('classroom:ended', ({ classroomId }) => {
+  socket.on('classroom:ended', async ({ classroomId }) => {
     if (socket.user?.role !== 'teacher') return;
-    io.to(`classroom:${classroomId}`).emit('classroom:ended', { classroomId });
+    const targetClassroomId = classroomId || socket.currentClassroomId;
+    if (targetClassroomId) {
+      await attendanceService.finalizeClassroomSessions(targetClassroomId);
+      io.to(`classroom:${targetClassroomId}`).emit('classroom:ended', { classroomId: targetClassroomId });
+    }
   });
+
 
   // Handle socket disconnect
   socket.on('disconnect', async () => {

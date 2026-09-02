@@ -139,11 +139,33 @@ const getAssignmentById = asyncHandler(async (req, res) => {
     });
   }
 
+  // Verify membership: user must be the teacher or an enrolled student
+  const classroomId = assignment.classroom._id || assignment.classroom;
+  const isTeacher = assignment.classroom.teacher
+    ? assignment.classroom.teacher.toString() === req.user._id.toString()
+    : false;
+
+  if (!isTeacher) {
+    const isEnrolled = await Enrollment.findOne({
+      classroom: classroomId,
+      student: req.user._id,
+      status: 'active',
+    });
+
+    if (!isEnrolled) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: You do not have access to this assignment.',
+      });
+    }
+  }
+
   res.status(200).json({
     success: true,
     data: assignment,
   });
 });
+
 
 /**
  * Teacher updates an assignment

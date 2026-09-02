@@ -48,5 +48,6 @@ const assignmentSchema = new mongoose.Schema(
 );
 
 assignmentSchema.index({ classroom: 1, dueDate: 1 });
+assignmentSchema.index({ createdBy: 1 });
 
 module.exports = mongoose.model('Assignment', assignmentSchema);

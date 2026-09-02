@@ -4,17 +4,39 @@ const Classroom = require('../models/Classroom');
 
 /**
  * Record attendance when student joins a live session
+ * Closes any dangling unclosed attendance record for this student/classroom first.
  */
 const recordStudentJoin = async (classroomId, studentId) => {
   try {
-    const today = new Date();
+    const now = new Date();
+    const today = new Date(now);
     today.setHours(0, 0, 0, 0);
+
+    // Close any previous unclosed session for this student in this classroom (e.g. from unclean disconnect)
+    const openRecord = await Attendance.findOne({
+      classroom: classroomId,
+      student: studentId,
+      leftAt: null,
+    }).sort({ joinedAt: -1 });
+
+    if (openRecord) {
+      const durationSeconds = Math.max(
+        0,
+        Math.round((now.getTime() - new Date(openRecord.joinedAt).getTime()) / 1000)
+      );
+      openRecord.leftAt = now;
+      openRecord.duration = (openRecord.duration || 0) + durationSeconds;
+      openRecord.status = openRecord.duration >= 60 ? 'present' : 'partial';
+      await openRecord.save();
+    }
 
     const attendance = await Attendance.create({
       classroom: classroomId,
       student: studentId,
       sessionDate: today,
-      joinedAt: new Date(),
+      joinedAt: now,
+      leftAt: null,
+      duration: 0,
       status: 'present',
     });
 
@@ -41,17 +63,42 @@ const recordStudentLeave = async (attendanceId) => {
     );
 
     attendance.leftAt = leaveTime;
-    attendance.duration += durationSeconds;
-    // If attended less than 60 seconds, mark as partial
-    if (attendance.duration < 60) {
-      attendance.status = 'partial';
-    }
+    attendance.duration = (attendance.duration || 0) + durationSeconds;
+    attendance.status = attendance.duration >= 60 ? 'present' : 'partial';
 
     await attendance.save();
     return attendance;
   } catch (error) {
     console.error('[Attendance Record Leave Error]:', error);
     return null;
+  }
+};
+
+/**
+ * Finalize all open attendance records when a classroom live session ends
+ */
+const finalizeClassroomSessions = async (classroomId) => {
+  try {
+    const now = new Date();
+    const openRecords = await Attendance.find({
+      classroom: classroomId,
+      leftAt: null,
+    });
+
+    for (const record of openRecords) {
+      const durationSeconds = Math.max(
+        0,
+        Math.round((now.getTime() - new Date(record.joinedAt).getTime()) / 1000)
+      );
+      record.leftAt = now;
+      record.duration = (record.duration || 0) + durationSeconds;
+      record.status = record.duration >= 60 ? 'present' : 'partial';
+      await record.save();
+    }
+    return openRecords.length;
+  } catch (error) {
+    console.error('[Attendance Finalize Sessions Error]:', error);
+    return 0;
   }
 };
 
@@ -139,7 +186,9 @@ const getStudentAttendance = async (studentId) => {
 module.exports = {
   recordStudentJoin,
   recordStudentLeave,
+  finalizeClassroomSessions,
   getClassroomAttendance,
   getStudentAttendance,
 };
+
 

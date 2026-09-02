@@ -371,17 +371,19 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
     // Existing participants received when joining room
     const handleParticipantsList = async ({ participants }) => {
       console.log('[WebRTC] Received initial participants list:', participants);
-      // For each existing participant in the room, initiate a WebRTC call offer
+      // As the newly joined participant, initiate WebRTC calls to all existing peers in the room
       for (const p of participants) {
-        await initiateCall(p.socketId, p.user);
+        if (p.socketId !== socket.id) {
+          await initiateCall(p.socketId, p.user);
+        }
       }
     };
 
-    // New user joined the room -> wait for their offer (or initiate call)
+    // New user joined the room -> existing participants wait for their incoming offer (resolves glare)
     const handleUserJoined = ({ participant }) => {
-      console.log('[WebRTC] New user joined room:', participant);
-      // Initiate call to new user
-      initiateCall(participant.socketId, participant.user);
+      console.log('[WebRTC] New user joined room (awaiting their offer):', participant);
+      // Note: We deliberately do NOT call initiateCall here.
+      // The joining user calls all existing peers via handleParticipantsList, preventing dual-offer glare.
     };
 
     // User left room -> cleanup peer connection
@@ -463,3 +465,4 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
 };
 
 export default useWebRTC;
+

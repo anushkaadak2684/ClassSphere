@@ -42,6 +42,10 @@ const attendanceSchema = new mongoose.Schema(
   }
 );
 
+// Optimized indexes for frequent queries
+attendanceSchema.index({ classroom: 1, sessionDate: -1 });
+attendanceSchema.index({ student: 1, classroom: 1, sessionDate: -1 });
 attendanceSchema.index({ classroom: 1, student: 1, sessionDate: 1 });
+attendanceSchema.index({ classroom: 1, status: 1 });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

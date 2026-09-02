@@ -6,15 +6,29 @@ const registerChatSocketHandlers = require('./chat.socket');
 const registerWebRTCSocketHandlers = require('./webrtc.socket');
 
 const initSocketIO = (server) => {
+  const allowedOrigins = [
+    process.env.CLIENT_URL || 'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+  ];
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || '*',
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+          return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
     pingTimeout: 60000,
     pingInterval: 25000,
   });
+
 
   // Socket Authentication Middleware
   io.use(async (socket, next) => {

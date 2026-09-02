@@ -31,5 +31,7 @@ const enrollmentSchema = new mongoose.Schema(
 
 // Prevent duplicate enrollments: A student cannot enroll twice in the same classroom
 enrollmentSchema.index({ classroom: 1, student: 1 }, { unique: true });
+enrollmentSchema.index({ student: 1, status: 1 });
+enrollmentSchema.index({ classroom: 1, status: 1 });
 
 module.exports = mongoose.model('Enrollment', enrollmentSchema);

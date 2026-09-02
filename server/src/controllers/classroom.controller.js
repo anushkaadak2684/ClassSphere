@@ -164,6 +164,8 @@ const startLiveSession = asyncHandler(async (req, res) => {
   });
 });
 
+const attendanceService = require('../services/attendance.service');
+
 /**
  * Teacher ends live session
  * POST /api/classrooms/:id/end
@@ -175,12 +177,16 @@ const endLiveSession = asyncHandler(async (req, res) => {
 
   await classroom.save();
 
+  // Finalize all open student attendance records for this session
+  await attendanceService.finalizeClassroomSessions(classroom._id);
+
   res.status(200).json({
     success: true,
     data: classroom,
     message: 'Live class ended.',
   });
 });
+
 
 module.exports = {
   createClassroom,
