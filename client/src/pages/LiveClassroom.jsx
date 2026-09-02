@@ -107,22 +107,23 @@ export const LiveClassroom = () => {
     joinRoomAndMedia();
 
     // Socket Event Listeners
-    const handleParticipantJoined = (data) => {
+    const handleUserJoined = ({ participant }) => {
       setParticipants((prev) => {
-        const exists = prev.some((p) => p.userId === data.userId);
+        const exists = prev.some((p) => p.socketId === participant.socketId || p.user?._id === participant.user?._id);
         if (exists) {
-          return prev.map((p) => (p.userId === data.userId ? { ...p, ...data } : p));
+          return prev.map((p) => (p.socketId === participant.socketId ? { ...p, ...participant } : p));
         }
-        return [...prev, data];
+        return [...prev, participant];
       });
     };
 
-    const handleParticipantLeft = ({ userId }) => {
-      setParticipants((prev) => prev.filter((p) => p.userId !== userId));
+    const handleUserLeft = ({ socketId, userId }) => {
+      setParticipants((prev) => prev.filter((p) => p.socketId !== socketId && p.user?._id !== userId));
     };
 
-    const handleRoomState = ({ participants: initialParticipants }) => {
-      setParticipants(initialParticipants || []);
+    const handleRoomParticipants = ({ participants: initialParticipants, self }) => {
+      const all = self ? [self, ...(initialParticipants || [])] : (initialParticipants || []);
+      setParticipants(all);
     };
 
     const handleChatMessage = (msg) => {
@@ -136,19 +137,19 @@ export const LiveClassroom = () => {
       setMessages(history || []);
     };
 
-    const handleHandStatus = ({ userId, isHandRaised: raised }) => {
+    const handleHandStatus = ({ socketId, userId, isHandRaised: raised }) => {
       setParticipants((prev) =>
-        prev.map((p) => (p.userId === userId ? { ...p, isHandRaised: raised } : p))
+        prev.map((p) => (p.socketId === socketId || p.user?._id === userId ? { ...p, isHandRaised: raised } : p))
       );
       if (userId === user?._id) {
         setIsHandRaised(raised);
       }
     };
 
-    const handleMediaStatus = ({ userId, isAudioEnabled: audio, isVideoEnabled: video }) => {
+    const handleMediaStatus = ({ socketId, isAudioEnabled: audio, isVideoEnabled: video }) => {
       setParticipants((prev) =>
         prev.map((p) =>
-          p.userId === userId
+          p.socketId === socketId
             ? {
                 ...p,
                 isAudioEnabled: audio !== undefined ? audio : p.isAudioEnabled,
@@ -165,32 +166,39 @@ export const LiveClassroom = () => {
       }
     };
 
-    const handleForceRemove = () => {
-      alert('You have been removed from this live session by the teacher.');
+    const handleForceRemove = ({ message }) => {
+      alert(message || 'You have been removed from this live session by the teacher.');
       navigate(`/classrooms/${classroomId}`);
     };
 
-    socket.on('classroom:participant_joined', handleParticipantJoined);
-    socket.on('classroom:participant_left', handleParticipantLeft);
-    socket.on('classroom:room_state', handleRoomState);
+    const handleClassroomEnded = () => {
+      alert('The teacher has ended this live session.');
+      navigate(`/classrooms/${classroomId}`);
+    };
+
+    socket.on('classroom:user-joined', handleUserJoined);
+    socket.on('classroom:user-left', handleUserLeft);
+    socket.on('classroom:participants', handleRoomParticipants);
     socket.on('chat:message', handleChatMessage);
     socket.on('chat:history', handleChatHistory);
-    socket.on('classroom:hand_raised', handleHandStatus);
-    socket.on('classroom:media_status', handleMediaStatus);
-    socket.on('classroom:force_mute', handleForceMute);
-    socket.on('classroom:force_remove', handleForceRemove);
+    socket.on('hand:updated', handleHandStatus);
+    socket.on('participant:media-updated', handleMediaStatus);
+    socket.on('participant:muted', handleForceMute);
+    socket.on('participant:removed', handleForceRemove);
+    socket.on('classroom:ended', handleClassroomEnded);
 
     return () => {
       socket.emit('classroom:leave', { classroomId });
-      socket.off('classroom:participant_joined', handleParticipantJoined);
-      socket.off('classroom:participant_left', handleParticipantLeft);
-      socket.off('classroom:room_state', handleRoomState);
+      socket.off('classroom:user-joined', handleUserJoined);
+      socket.off('classroom:user-left', handleUserLeft);
+      socket.off('classroom:participants', handleRoomParticipants);
       socket.off('chat:message', handleChatMessage);
       socket.off('chat:history', handleChatHistory);
-      socket.off('classroom:hand_raised', handleHandStatus);
-      socket.off('classroom:media_status', handleMediaStatus);
-      socket.off('classroom:force_mute', handleForceMute);
-      socket.off('classroom:force_remove', handleForceRemove);
+      socket.off('hand:updated', handleHandStatus);
+      socket.off('participant:media-updated', handleMediaStatus);
+      socket.off('participant:muted', handleForceMute);
+      socket.off('participant:removed', handleForceRemove);
+      socket.off('classroom:ended', handleClassroomEnded);
       cleanupMedia();
     };
   }, [socket, isConnected, classroomId, user?._id]);
@@ -210,25 +218,25 @@ export const LiveClassroom = () => {
     if (!socket || !isConnected) return;
     const nextState = !isHandRaised;
     setIsHandRaised(nextState);
-    socket.emit('classroom:raise_hand', { classroomId, isHandRaised: nextState });
-  }, [socket, isConnected, isHandRaised, classroomId]);
+    socket.emit(nextState ? 'hand:raise' : 'hand:lower');
+  }, [socket, isConnected, isHandRaised]);
 
   const handleMuteParticipant = useCallback(
-    (targetUserId) => {
-      if (!socket || !isTeacher) return;
-      socket.emit('classroom:moderate_mute', { classroomId, targetUserId });
+    (targetSocketId) => {
+      if (!socket || !isTeacher || !targetSocketId) return;
+      socket.emit('participant:mute', { targetSocketId });
     },
-    [socket, isTeacher, classroomId]
+    [socket, isTeacher]
   );
 
   const handleRemoveParticipant = useCallback(
-    (targetUserId) => {
-      if (!socket || !isTeacher) return;
+    (targetSocketId) => {
+      if (!socket || !isTeacher || !targetSocketId) return;
       if (window.confirm('Are you sure you want to remove this participant?')) {
-        socket.emit('classroom:moderate_remove', { classroomId, targetUserId });
+        socket.emit('participant:remove', { targetSocketId });
       }
     },
-    [socket, isTeacher, classroomId]
+    [socket, isTeacher]
   );
 
   const handleToggleChat = () => {
@@ -238,6 +246,7 @@ export const LiveClassroom = () => {
     });
     if (isParticipantsOpen) setIsParticipantsOpen(false);
   };
+
 
   const handleToggleParticipants = () => {
     setIsParticipantsOpen((prev) => !prev);

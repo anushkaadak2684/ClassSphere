@@ -4,6 +4,32 @@ const Message = require('../models/Message');
  * Real-Time Chat Socket Handlers
  */
 const registerChatSocketHandlers = (io, socket) => {
+  // Fetch chat history for classroom
+  socket.on('chat:history', async ({ classroomId }) => {
+    try {
+      if (!classroomId) return;
+
+      const messages = await Message.find({ classroom: classroomId })
+        .populate('sender', 'name email avatarUrl role')
+        .sort({ createdAt: 1 })
+        .limit(100)
+        .lean();
+
+      const formatted = messages.map((m) => ({
+        _id: m._id,
+        classroomId: m.classroom,
+        sender: m.sender || { name: 'Unknown', role: 'student' },
+        content: m.content,
+        type: m.type,
+        createdAt: m.createdAt,
+      }));
+
+      socket.emit('chat:history', formatted);
+    } catch (error) {
+      console.error('[Chat History Error]:', error);
+    }
+  });
+
   // Send message in classroom room
   socket.on('chat:send', async ({ classroomId, content, type }) => {
     try {
@@ -45,3 +71,4 @@ const registerChatSocketHandlers = (io, socket) => {
 };
 
 module.exports = registerChatSocketHandlers;
+
