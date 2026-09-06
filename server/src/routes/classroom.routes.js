@@ -9,18 +9,24 @@ const {
   authorizeClassroomMember,
   authorizeClassroomOwner,
 } = require('../middleware/role.middleware');
+const { validateBody } = require('../middleware/validate.middleware');
+const {
+  createClassroomSchema,
+  updateClassroomSchema,
+  joinClassroomSchema,
+} = require('../schemas/validation.schemas');
 
 // All classroom routes require authenticated MongoDB user
 router.use(authenticate, requireExistingUser);
 
 // General classroom endpoints
-router.post('/', authorizeTeacher, classroomController.createClassroom);
+router.post('/', authorizeTeacher, validateBody(createClassroomSchema), classroomController.createClassroom);
 router.get('/', classroomController.getClassrooms);
-router.post('/join', authorizeStudent, classroomController.joinClassroom);
+router.post('/join', authorizeStudent, validateBody(joinClassroomSchema), classroomController.joinClassroom);
 
 // Specific classroom endpoints
 router.get('/:id', validateObjectId('id'), authorizeClassroomMember, classroomController.getClassroomById);
-router.put('/:id', validateObjectId('id'), authorizeClassroomOwner, classroomController.updateClassroom);
+router.put('/:id', validateObjectId('id'), authorizeClassroomOwner, validateBody(updateClassroomSchema), classroomController.updateClassroom);
 router.delete('/:id', validateObjectId('id'), authorizeClassroomOwner, classroomController.deleteClassroom);
 router.get('/:id/participants', validateObjectId('id'), authorizeClassroomMember, classroomController.getParticipants);
 
@@ -29,4 +35,5 @@ router.post('/:id/start', validateObjectId('id'), authorizeClassroomOwner, class
 router.post('/:id/end', validateObjectId('id'), authorizeClassroomOwner, classroomController.endLiveSession);
 
 module.exports = router;
+
 

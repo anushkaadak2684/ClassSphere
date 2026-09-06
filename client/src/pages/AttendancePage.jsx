@@ -10,14 +10,17 @@ import {
   Filter,
   RefreshCw,
   Sparkles,
+  Download,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import classroomService from '../services/classroom.service';
 import AppLayout from '../components/layout/AppLayout';
 import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState';
+import { exportToCSV } from '../utils/csvExport';
 import { motion } from 'framer-motion';
 
 export const AttendancePage = () => {
@@ -79,20 +82,65 @@ export const AttendancePage = () => {
     return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleExportCSV = () => {
+    const columns = [
+      {
+        label: 'Date',
+        transform: (row) =>
+          new Date(row.sessionDate || row.joinedAt).toLocaleDateString(),
+      },
+      { label: 'Classroom Name', key: 'classroom.name' },
+      { label: 'Subject', key: 'classroom.subject' },
+      {
+        label: 'Join Time',
+        transform: (row) => (row.joinedAt ? new Date(row.joinedAt).toLocaleTimeString() : '—'),
+      },
+      {
+        label: 'Leave Time',
+        transform: (row) => (row.leftAt ? new Date(row.leftAt).toLocaleTimeString() : '—'),
+      },
+      {
+        label: 'Duration (Seconds)',
+        key: 'duration',
+      },
+      {
+        label: 'Formatted Duration',
+        transform: (row) => formatDuration(row.duration),
+      },
+      { label: 'Status', key: 'status' },
+    ];
+
+    exportToCSV('My_Attendance_Report', columns, filteredHistory.length > 0 ? filteredHistory : history);
+  };
+
   return (
     <AppLayout
       title="Attendance Hub"
       subtitle="Live Session Participation"
       actions={
-        <button
-          onClick={fetchAttendance}
-          className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-          title="Refresh attendance"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {history.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Download}
+              onClick={handleExportCSV}
+              className="text-xs"
+            >
+              Export CSV
+            </Button>
+          )}
+          <button
+            onClick={fetchAttendance}
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            title="Refresh attendance"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       }
     >
+
       {/* Header Banner */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden transition-colors">
         <div className="relative z-10">

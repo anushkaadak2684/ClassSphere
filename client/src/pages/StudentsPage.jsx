@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Download,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import classroomService from '../services/classroom.service';
@@ -26,6 +27,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Loader from '../components/common/Loader';
 import EmptyState from '../components/common/EmptyState';
+import { exportToCSV } from '../utils/csvExport';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const StudentsPage = () => {
@@ -133,7 +135,6 @@ export const StudentsPage = () => {
     }
   };
 
-
   const handleCloseModal = () => {
     setSelectedStudent(null);
     setSelectedStudentClassroom(null);
@@ -161,20 +162,62 @@ export const StudentsPage = () => {
     return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
   };
 
+  const handleExportRosterCSV = () => {
+    const listToExport = filteredTeacherRoster.length > 0 ? filteredTeacherRoster : studentsRoster;
+    const columns = [
+      { label: 'Student Name', key: 'student.name' },
+      { label: 'Student Email', key: 'student.email' },
+      { label: 'Classroom Name', key: 'classroom.name' },
+      { label: 'Subject', key: 'classroom.subject' },
+      {
+        label: 'Attendance Rate (%)',
+        transform: (row) => `${row.attendancePercentage || 0}%`,
+      },
+      {
+        label: 'Sessions Attended',
+        transform: (row) => `${row.attendedSessions || 0}/${row.totalSessions || 0}`,
+      },
+      {
+        label: 'Assignments Completed',
+        transform: (row) => `${row.completedAssignments || 0}/${row.totalAssignments || 0}`,
+      },
+      {
+        label: 'Average Score (%)',
+        transform: (row) => (row.gradedCount > 0 ? `${row.averageScore || 0}%` : 'Unassigned'),
+      },
+    ];
+
+    exportToCSV('Student_Performance_Roster', columns, listToExport);
+  };
+
   return (
     <AppLayout
       title={isTeacher ? 'Student Management Roster' : 'Classmates & Instructors'}
       subtitle={isTeacher ? 'Performance & Academic Tracking' : 'Academic Network'}
       actions={
-        <button
-          onClick={fetchRoster}
-          className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-          title="Refresh roster"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {isTeacher && studentsRoster.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              icon={Download}
+              onClick={handleExportRosterCSV}
+              className="text-xs"
+            >
+              Export Roster CSV
+            </Button>
+          )}
+          <button
+            onClick={fetchRoster}
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            title="Refresh roster"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       }
     >
+
       {/* Search & Filter Bar */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors">
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">

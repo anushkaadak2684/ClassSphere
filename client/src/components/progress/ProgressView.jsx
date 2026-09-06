@@ -11,10 +11,13 @@ import {
   FileCheck2,
   Sparkles,
   BarChart2,
+  Download,
 } from 'lucide-react';
 import Card from '../common/Card';
 import Badge from '../common/Badge';
+import Button from '../common/Button';
 import Loader from '../common/Loader';
+import { exportToCSV } from '../../utils/csvExport';
 
 export const ProgressView = ({ progressData, loading = false, isTeacher = false }) => {
   if (loading) {
@@ -38,6 +41,25 @@ export const ProgressView = ({ progressData, loading = false, isTeacher = false 
   // -------------------------------------------------------------------------
   if (!isTeacher) {
     const { metrics = {}, assignmentBreakdown = [] } = progressData;
+
+    const handleExportStudentCourseworkCSV = () => {
+      const columns = [
+        { label: 'Assignment Title', key: 'title' },
+        {
+          label: 'Due Date',
+          transform: (row) => (row.dueDate ? new Date(row.dueDate).toLocaleDateString() : '—'),
+        },
+        { label: 'Status', key: 'status' },
+        {
+          label: 'Marks Obtained',
+          transform: (row) => (row.marks !== null && row.marks !== undefined ? row.marks : '—'),
+        },
+        { label: 'Max Marks', key: 'maxMarks' },
+        { label: 'Feedback', key: 'feedback' },
+      ];
+
+      exportToCSV('My_Coursework_History', columns, assignmentBreakdown);
+    };
 
     return (
       <div className="space-y-8">
@@ -97,14 +119,28 @@ export const ProgressView = ({ progressData, loading = false, isTeacher = false 
 
         {/* Academic Coursework & Grades Breakdown */}
         <div>
-          <div className="mb-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Coursework & Grading History
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Complete log of your assignments, scores, and instructor feedback.
-            </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Coursework & Grading History
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Complete log of your assignments, scores, and instructor feedback.
+              </p>
+            </div>
+            {assignmentBreakdown.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Download}
+                onClick={handleExportStudentCourseworkCSV}
+                className="text-xs"
+              >
+                Export Grades CSV
+              </Button>
+            )}
           </div>
+
 
           {assignmentBreakdown.length === 0 ? (
             <Card className="p-8 text-center">
@@ -195,10 +231,54 @@ export const ProgressView = ({ progressData, loading = false, isTeacher = false 
     (s) => s.attendancePercentage < 75 || ((s.totalAssignments || 0) - (s.completedAssignments || 0) > 1)
   );
 
+  const handleExportTeacherGradebookCSV = () => {
+    const columns = [
+      { label: 'Student Name', key: 'student.name' },
+      { label: 'Student Email', key: 'student.email' },
+      {
+        label: 'Attendance Rate (%)',
+        transform: (row) => `${row.attendancePercentage || 0}%`,
+      },
+      {
+        label: 'Sessions Attended',
+        transform: (row) => `${row.attendedSessions || 0}/${row.totalSessions || 0}`,
+      },
+      {
+        label: 'Assignments Completed',
+        transform: (row) => `${row.completedAssignments || 0}/${row.totalAssignments || 0}`,
+      },
+      {
+        label: 'Average Score (%)',
+        transform: (row) => (row.gradedCount > 0 ? `${row.averageScore || 0}%` : 'Unassigned'),
+      },
+    ];
+
+    exportToCSV('Classroom_Gradebook_Report', columns, students);
+  };
+
   return (
     <div className="space-y-8">
+      {/* Top Action Header */}
+      {students.length > 0 && (
+        <div className="flex items-center justify-between pb-2">
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Academic Performance Summary ({students.length} enrolled students)
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={Download}
+            onClick={handleExportTeacherGradebookCSV}
+            className="text-xs"
+          >
+            Export Gradebook CSV
+          </Button>
+        </div>
+      )}
+
       {/* Aggregate KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+
         <Card className="p-5 flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">

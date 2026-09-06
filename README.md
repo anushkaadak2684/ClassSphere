@@ -20,23 +20,25 @@ ClassSphere unifies real-time WebRTC live lectures, collaborative classroom mess
 * **Classroom Chat & Announcements**: Persistent messaging, public announcements, and digital hand-raise notifications.
 * **Course Materials**: Upload lecture slides, PDF documents, and archives securely to Cloudinary.
 * **Assignments & Grading**: Create assignments with due dates, maximum points, and starter attachments. Review student solution archives, grade submissions with numerical scores, and provide qualitative feedback.
-* **Students Management Roster**: Dedicated roster to search and inspect student performance across all classrooms. Interactive modal drawer displays individual attendance rates, turn-in percentages, average marks, and historical activity.
-* **Academic Progress Analytics**: Aggregated class health analytics including average attendance rate, turn-in rate, class average score, benchmark distribution bars, and student performance tables.
+* **Students Management Roster & CSV Export**: Dedicated roster to search and inspect student performance across all classrooms with **one-click Student Performance Roster CSV Export**. Interactive modal drawer displays individual attendance rates, turn-in percentages, average marks, and historical activity.
+* **Academic Progress Analytics & Gradebook CSV**: Aggregated class health analytics including average attendance rate, turn-in rate, class average score, benchmark distribution bars, and **Class Gradebook CSV Export**.
 
 ### 🎓 Student Experience
 * **Enrollment via Join Code**: Instantly join virtual classrooms using 6-character invite codes.
 * **Live Lecture Participation**: Join active live sessions with two-way audio, video, chat, and digital hand-raising.
 * **Coursework & Submissions**: View assigned homework, download starter files, submit solution archives, and track submission status.
-* **Grades & Feedback**: Access real-time numerical marks and teacher feedback.
-* **Attendance Hub**: Dedicated personal attendance portal showing overall attendance %, attended sessions, total sessions, and classroom-by-classroom records.
+* **Grades & Feedback**: Access real-time numerical marks, teacher feedback, and **Personal Coursework CSV Export**.
+* **Attendance Hub & CSV Export**: Dedicated personal attendance portal showing overall attendance %, attended sessions, total sessions, classroom-by-classroom records, and **Attendance Log CSV Export**.
 * **My Progress Analytics**: Personal academic growth dashboard computing turn-in percentage, attendance rate, and average marks across all enrolled subjects.
 * **Course Materials Hub**: Browse and download instructor-provided lecture slides and documents.
 
-### 🎨 Visuals & Aesthetics
+### 🛡️ Production Engineering & Security
+* **Joi Schema Validation**: Strong backend request body schema validation using Joi (`validateBody` middleware) enforcing field types, length constraints, and bounded scoring.
 * **Unified Profile Management**: Single cohesive profile card combining avatar customizer, personal information, and password modification.
 * **Dark & Light Themes**: System-wide theme switcher with pure white light-mode aesthetics and sleek dark-mode styling.
 * **Framer Motion Animations**: Micro-interactions, staggered card reveals, modal drawer transitions, and smooth tab switching.
 * **Precision Scroll & Navigation**: Instant route scroll restoration via `ScrollToTop` and smooth in-page anchor navigation.
+
 
 ---
 

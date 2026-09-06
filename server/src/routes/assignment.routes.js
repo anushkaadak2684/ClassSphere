@@ -10,6 +10,12 @@ const {
   authorizeClassroomMember,
   authorizeClassroomOwner,
 } = require('../middleware/role.middleware');
+const { validateBody } = require('../middleware/validate.middleware');
+const {
+  createAssignmentSchema,
+  updateAssignmentSchema,
+  gradeSubmissionSchema,
+} = require('../schemas/validation.schemas');
 
 router.use(authenticate, requireExistingUser);
 
@@ -19,6 +25,7 @@ router.post(
   validateObjectId('id'),
   authorizeClassroomOwner,
   upload.single('file'),
+  validateBody(createAssignmentSchema),
   assignmentController.createAssignment
 );
 
@@ -31,7 +38,13 @@ router.get(
 
 // Individual assignment endpoints
 router.get('/assignments/:id', validateObjectId('id'), assignmentController.getAssignmentById);
-router.put('/assignments/:id', validateObjectId('id'), authorizeTeacher, assignmentController.updateAssignment);
+router.put(
+  '/assignments/:id',
+  validateObjectId('id'),
+  authorizeTeacher,
+  validateBody(updateAssignmentSchema),
+  assignmentController.updateAssignment
+);
 router.delete('/assignments/:id', validateObjectId('id'), authorizeTeacher, assignmentController.deleteAssignment);
 
 // Submissions endpoints
@@ -62,8 +75,10 @@ router.put(
   '/submissions/:id/grade',
   validateObjectId('id'),
   authorizeTeacher,
+  validateBody(gradeSubmissionSchema),
   assignmentController.gradeSubmission
 );
 
 module.exports = router;
+
 
