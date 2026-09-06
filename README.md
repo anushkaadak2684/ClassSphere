@@ -42,24 +42,24 @@ ClassSphere bridges this gap by unifying synchronous live collaboration with asy
 * **Routing & Security**: `react-router-dom` with role-aware `ProtectedRoute` guards verifying Firebase JWTs and user roles before rendering views.
 * **UI Layer**: Styled with TailwindCSS and Framer Motion for hardware-accelerated drawer transitions and modal animations.
 
-### Backend (Node.js + Express)
-* **Layered Architecture**: Express REST routes delegate to dedicated controllers and services (`attendance.service.js`, `progress.service.js`).
-* **Deterministic Request Validation**: Joi validation schemas executed via reusable `validateBody` middleware to sanitize inputs prior to controller execution.
+### Backend (Node.js + Express + MongoDB)
+* **Layered Architecture**: Express REST routes delegate to controllers and business logic services (`attendance.service.js`, `progress.service.js`).
 * **Authentication & RBAC**: `auth.middleware.js` verifies Firebase JWTs via Firebase Admin SDK, maps tokens to MongoDB `User` documents, and enforces role and classroom ownership permissions (`requireRole`, `requireClassroomOwner`, `requireClassroomMember`).
-* **Error Handling**: Centralized error middleware handling operational errors, Mongoose validation failures, Firebase token errors, and unhandled exceptions.
+* **Deterministic Request Validation**: Joi validation schemas executed via reusable `validateBody` middleware sanitize input payloads prior to controller execution.
+* **Database & Indexing**: MongoDB Atlas with Mongoose ODM utilizing compound unique indexes (`{ classroom: 1, student: 1 }` on enrollments; `{ assignment: 1, student: 1 }` on submissions) and multi-stage aggregation pipelines for real-time analytics.
+* **Centralized Error Handling**: Global error middleware catches operational errors, Mongoose validation failures, Firebase token errors, and unhandled exceptions.
 
 ### Real-Time Layer (Socket.io)
-* **Isolated Room Namespaces**: Scoped to `classroom:${classroomId}` to eliminate cross-class data leakage.
+* **Room Sandboxing**: Live classroom state is scoped to isolated rooms (`classroom:${classroomId}`) to prevent signal leakage.
 * **Dynamic In-Memory Presence**: Server-side map tracks active participants, media states, and hand-raise queues.
-* **Database Hydration**: Preloads the latest 100 chat messages from MongoDB upon room entry.
-* **Lifecycle-Aware Attendance Logging**: Records student join timestamps on `classroom:join`, calculates duration ($leftAt - joinedAt$) on departure or socket disconnect, and categorizes status (`present`, `partial`, `absent`).
+* **Database Hydration**: Preloads the latest 100 historical chat messages from MongoDB upon room entry.
+* **Lifecycle-Aware Attendance**: Records student join timestamps on `classroom:join`, calculates duration ($leftAt - joinedAt$) on departure or socket disconnect, and categorizes status (`present`, `partial`, `absent`).
 
 ### Media Pipeline (WebRTC + Cloudinary)
-* **Mesh Topology**: P2P full-mesh where each peer connects directly to all other room participants.
+* **Mesh Topology**: Browser-native WebRTC full-mesh streaming for direct audio/video transmission without media servers.
 * **Designated Caller Protocol**: Newly joined peers act as the designated offer initiators to all existing participants, preventing SDP collision glare.
 * **Screen Sharing**: Swaps video `RTCRtpSender` track dynamically with display capture track, reverting cleanly on track end.
-* **NAT Traversal**: Configured with Google public STUN servers for ICE candidate discovery.
-* **Asset Storage**: Multipart files are buffered in memory via `multer` and streamed directly to Cloudinary CDN, storing secure HTTPS URLs and public IDs in MongoDB.
+* **Asset Storage**: Multipart files are buffered in memory via `multer` and streamed directly to Cloudinary CDN, storing secure HTTPS URLs in MongoDB.
 
 ---
 
@@ -127,31 +127,40 @@ flowchart TD
 
 ### REST API Reference
 
-| Domain | Method | Endpoint | Access | Purpose |
-|---|---|---|---|---|
-| **Users** | `POST` | `/api/users/sync` | Authenticated | Syncs/creates user profile in MongoDB from verified Firebase token |
-| **Users** | `GET` | `/api/users/me` | Authenticated | Retrieves current authenticated user profile and role |
-| **Users** | `PUT` | `/api/users/me` | Authenticated | Updates display name and avatar URL (validated by Joi) |
-| **Classrooms** | `POST` | `/api/classrooms` | Teacher | Creates a classroom and auto-generates a unique join code |
-| **Classrooms** | `GET` | `/api/classrooms` | Authenticated | Retrieves all classrooms created by or enrolled in by user |
-| **Classrooms** | `GET` | `/api/classrooms/:id` | Member | Returns classroom details, enrollment count, and teacher info |
-| **Classrooms** | `PUT` | `/api/classrooms/:id` | Owner | Updates classroom name, subject, or description |
-| **Classrooms** | `DELETE` | `/api/classrooms/:id` | Owner | Deletes classroom and cascades deletion of related records |
-| **Classrooms** | `POST` | `/api/classrooms/join` | Student | Enrolls a student using a 6-character uppercase join code |
-| **Classrooms** | `POST` | `/api/classrooms/:id/start` | Owner | Starts live session (`isLive: true`) |
-| **Classrooms** | `POST` | `/api/classrooms/:id/end` | Owner | Ends live session and finalizes active attendance records |
-| **Assignments**| `POST` | `/api/classrooms/:id/assignments` | Owner | Creates assignment with due date, max marks, and attachment |
-| **Assignments**| `GET` | `/api/classrooms/:id/assignments` | Member | Lists all assignments for a classroom |
-| **Assignments**| `POST` | `/api/assignments/:id/submit` | Student | Uploads submission archive to Cloudinary and saves record |
-| **Assignments**| `GET` | `/api/assignments/:id/submissions` | Owner | Lists all student submissions for evaluation |
-| **Assignments**| `PUT` | `/api/submissions/:id/grade` | Owner | Assigns numerical marks and feedback (validated by Joi) |
-| **Materials**  | `POST` | `/api/classrooms/:id/materials` | Owner | Uploads document to Cloudinary and creates material record |
-| **Materials**  | `GET` | `/api/classrooms/:id/materials` | Member | Lists curriculum materials for a classroom |
-| **Materials**  | `DELETE` | `/api/materials/:id` | Owner | Deletes asset from Cloudinary and removes database record |
-| **Attendance** | `GET` | `/api/classrooms/:id/attendance` | Owner | Retrieves session logs, student timestamps, and durations |
-| **Attendance** | `GET` | `/api/attendance/my` | Student | Returns student's personal attendance history across classes |
-| **Progress**   | `GET` | `/api/classrooms/:id/progress` | Member | Aggregates class attendance %, turn-in %, and grade distribution |
-| **Progress**   | `GET` | `/api/classrooms/:id/students/:studentId/details` | Owner | Returns deep-dive individual metrics, submissions, and logs |
+#### Classrooms & Sessions
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/classrooms` | Teacher | Create class with 6-char join code |
+| `GET` | `/api/classrooms` | Authenticated | List all user classrooms |
+| `GET` | `/api/classrooms/:id` | Member | Get classroom details & roster count |
+| `PUT` | `/api/classrooms/:id` | Owner | Update class title or description |
+| `DELETE` | `/api/classrooms/:id` | Owner | Delete class & cascade records |
+| `POST` | `/api/classrooms/join` | Student | Enroll via 6-character join code |
+| `POST` | `/api/classrooms/:id/start` | Owner | Start live session (`isLive = true`) |
+| `POST` | `/api/classrooms/:id/end` | Owner | End session & finalize attendance |
+
+#### Assignments & Submissions
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/classrooms/:id/assignments` | Owner | Create assignment with due date |
+| `GET` | `/api/classrooms/:id/assignments` | Member | List assignments for class |
+| `POST` | `/api/assignments/:id/submit` | Student | Upload solution file to Cloudinary |
+| `GET` | `/api/assignments/:id/submissions` | Owner | List submissions for evaluation |
+| `PUT` | `/api/submissions/:id/grade` | Owner | Assign numerical grade & feedback |
+
+#### Materials, Attendance & Users
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/classrooms/:id/materials` | Owner | Upload file to Cloudinary CDN |
+| `GET` | `/api/classrooms/:id/materials` | Member | List class learning materials |
+| `DELETE` | `/api/materials/:id` | Owner | Delete file from Cloudinary & DB |
+| `GET` | `/api/classrooms/:id/attendance` | Owner | Get session logs & duration records |
+| `GET` | `/api/attendance/my` | Student | Get personal attendance history |
+| `POST` | `/api/users/sync` | Authenticated | Sync user profile from Firebase token |
+| `GET` | `/api/users/me` | Authenticated | Get current user profile & role |
+| `PUT` | `/api/users/me` | Authenticated | Update user name or avatar URL |
+| `GET` | `/api/classrooms/:id/progress` | Member | Get class attendance & score metrics |
+| `GET` | `/api/classrooms/:id/students/:studentId/details` | Owner | Get individual student metrics drawer |
 
 ### Socket.io & WebRTC Event Reference
 
