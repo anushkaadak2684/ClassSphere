@@ -1,98 +1,190 @@
 # ClassSphere — Real-Time Virtual Classroom & Academic Management Platform
 
-ClassSphere is a production-grade Real-Time Virtual Classroom and Academic Management Platform built with React 18, Node.js, Express, MongoDB Atlas, Socket.io, WebRTC, Firebase Authentication, Cloudinary, and Framer Motion.
+ClassSphere is a full-stack virtual classroom and academic management platform that combines peer-to-peer video conferencing, WebSocket state synchronization, automated session attendance tracking, structured coursework delivery, and academic analytics into a single unified system.
 
 ---
 
 ## 1. Project Overview
 
-ClassSphere unifies real-time WebRTC live lectures, collaborative classroom messaging, digital hand-raising, curriculum material distribution, assignment workflows, automated session attendance tracking, and live academic performance analytics into a single responsive application.
+Online education workflows are frequently fragmented across disconnected tools: video calls happen in one app, file distribution in another, attendance is taken manually, and grading is handled on separate spreadsheets. 
+
+ClassSphere bridges this gap by unifying synchronous live collaboration with asynchronous academic administration:
+* **Synchronous Live Classroom**: WebRTC peer-to-peer audio, video, and screen sharing coupled with Socket.io dynamic attendee presence, hand-raising queues, persistent live chat, and remote instructor moderation.
+* **Asynchronous Academic Workflows**: Cloudinary-backed curriculum distribution, assignment submissions, numerical grading drawers with qualitative feedback, automated session duration logging, and performance analytics with CSV exports.
 
 ---
 
-## 2. Key Features
+## 2. Core Features
 
-### 👨‍🏫 Teacher Experience
-* **Dashboard & Metrics**: Instant overview of active classes, total enrolled students, assignments awaiting evaluation, and live session status.
-* **Classroom Management**: Create, update, and manage classrooms with auto-generated unique 6-character join codes.
-* **Live WebRTC Classroom**: Start and end live HD video lectures with camera, microphone, and browser screen-sharing controls.
-* **Real-Time Moderation**: Manage participant presence, mute noisy participants, and remove disruptive users.
-* **Classroom Chat & Announcements**: Persistent messaging, public announcements, and digital hand-raise notifications.
-* **Course Materials**: Upload lecture slides, PDF documents, and archives securely to Cloudinary.
-* **Assignments & Grading**: Create assignments with due dates, maximum points, and starter attachments. Review student solution archives, grade submissions with numerical scores, and provide qualitative feedback.
-* **Students Management Roster & CSV Export**: Dedicated roster to search and inspect student performance across all classrooms with **one-click Student Performance Roster CSV Export**. Interactive modal drawer displays individual attendance rates, turn-in percentages, average marks, and historical activity.
-* **Academic Progress Analytics & Gradebook CSV**: Aggregated class health analytics including average attendance rate, turn-in rate, class average score, benchmark distribution bars, and **Class Gradebook CSV Export**.
+### Teacher Capabilities
+* **Classroom Lifecycle**: Create and manage classrooms with auto-generated 6-character join codes.
+* **Live Lecture Control**: Start/end sessions, broadcast audio/video streams, and share browser screens.
+* **Session Moderation**: Track real-time presence, manage ordered hand-raise queues, and remotely mute or kick participants.
+* **Coursework & Evaluation**: Publish assignments with attachments and deadlines, inspect student submission archives, assign numerical grades, and return qualitative feedback.
+* **Curriculum Management**: Upload lecture slides, PDF resources, and starter archives directly to Cloudinary CDN.
+* **Analytics & Roster**: View class health metrics (attendance %, turn-in %, class average score, grade distributions), inspect individual student progress drawers, and export roster/gradebook data to CSV.
 
-### 🎓 Student Experience
-* **Enrollment via Join Code**: Instantly join virtual classrooms using 6-character invite codes.
-* **Live Lecture Participation**: Join active live sessions with two-way audio, video, chat, and digital hand-raising.
-* **Coursework & Submissions**: View assigned homework, download starter files, submit solution archives, and track submission status.
-* **Grades & Feedback**: Access real-time numerical marks, teacher feedback, and **Personal Coursework CSV Export**.
-* **Attendance Hub & CSV Export**: Dedicated personal attendance portal showing overall attendance %, attended sessions, total sessions, classroom-by-classroom records, and **Attendance Log CSV Export**.
-* **My Progress Analytics**: Personal academic growth dashboard computing turn-in percentage, attendance rate, and average marks across all enrolled subjects.
-* **Course Materials Hub**: Browse and download instructor-provided lecture slides and documents.
-
-### 🛡️ Production Engineering & Security
-* **Joi Schema Validation**: Strong backend request body schema validation using Joi (`validateBody` middleware) enforcing field types, length constraints, and bounded scoring.
-* **Unified Profile Management**: Single cohesive profile card combining avatar customizer, personal information, and password modification.
-* **Dark & Light Themes**: System-wide theme switcher with pure white light-mode aesthetics and sleek dark-mode styling.
-* **Framer Motion Animations**: Micro-interactions, staggered card reveals, modal drawer transitions, and smooth tab switching.
-* **Precision Scroll & Navigation**: Instant route scroll restoration via `ScrollToTop` and smooth in-page anchor navigation.
-
+### Student Capabilities
+* **Instant Enrollment**: Enroll in virtual classrooms using 6-character join codes.
+* **Interactive Live Participation**: Join active lectures with two-way media, screen sharing, live chat, and digital hand-raising.
+* **Coursework Submissions**: Download assignment briefs, submit solution archives to Cloudinary, and view grades and feedback.
+* **Curriculum Hub**: Access and download instructor-published course materials and lecture notes.
+* **Attendance Portal**: View historical lecture attendance records, total sessions attended vs. held, session durations, and export logs to CSV.
+* **Academic Growth**: Track personal turn-in rates, average scores across classes, and subject-level performance metrics.
 
 ---
 
-## 3. High-Level Architecture
+## 3. Technical Architecture & Implementation
 
-```text
-                                CLIENT
-                React 18 + Vite + TailwindCSS + Framer Motion
-                                  │
-                     ┌────────────┴────────────┐
-                     │                         │
-                     ▼                         ▼
-               Firebase Auth               REST API
-            (Bearer Token Header)      (Axios Interceptor)
-                     │                         │
-                     │                         ▼
-                     │                  Node.js + Express
-                     │                         │
-                     │                 ┌───────┴───────┐
-                     │                 │               │
-                     │                 ▼               ▼
-                     │           MongoDB Atlas     Cloudinary
-                     │           (Mongoose DB)   (Media Storage)
-                     ▼                         │
-                 Socket.io ────────────────────┘
-                     │
-             WebRTC Signaling
-                     │
-       ┌─────────────┴─────────────┐
-       │                           │
-       ▼                           ▼
-    Teacher                     Students
-       │                           │
-       └────────── WebRTC ─────────┘
-            Audio / Video / Screen
+### Frontend (React 18 + Vite)
+* **State & Networking**: React Context (`AuthContext`, `SocketContext`) maintains persistent auth sessions and WebSocket connections across route transitions.
+* **Custom WebRTC Hook (`useWebRTC`)**: Encapsulates `RTCPeerConnection` lifecycles, media tracks (audio, video, `getDisplayMedia` screen sharing), renegotiation, and ICE candidate buffering.
+* **Routing & Security**: `react-router-dom` with role-aware `ProtectedRoute` guards verifying Firebase JWTs and user roles before rendering views.
+* **UI Layer**: Styled with TailwindCSS and Framer Motion for hardware-accelerated drawer transitions and modal animations.
+
+### Backend (Node.js + Express)
+* **Layered Architecture**: Express REST routes delegate to dedicated controllers and services (`attendance.service.js`, `progress.service.js`).
+* **Deterministic Request Validation**: Joi validation schemas executed via reusable `validateBody` middleware to sanitize inputs prior to controller execution.
+* **Authentication & RBAC**: `auth.middleware.js` verifies Firebase JWTs via Firebase Admin SDK, maps tokens to MongoDB `User` documents, and enforces role and classroom ownership permissions (`requireRole`, `requireClassroomOwner`, `requireClassroomMember`).
+* **Error Handling**: Centralized error middleware handling operational errors, Mongoose validation failures, Firebase token errors, and unhandled exceptions.
+
+### Real-Time Layer (Socket.io)
+* **Isolated Room Namespaces**: Scoped to `classroom:${classroomId}` to eliminate cross-class data leakage.
+* **Dynamic In-Memory Presence**: Server-side map tracks active participants, media states, and hand-raise queues.
+* **Database Hydration**: Preloads the latest 100 chat messages from MongoDB upon room entry.
+* **Lifecycle-Aware Attendance Logging**: Records student join timestamps on `classroom:join`, calculates duration ($leftAt - joinedAt$) on departure or socket disconnect, and categorizes status (`present`, `partial`, `absent`).
+
+### Media Pipeline (WebRTC + Cloudinary)
+* **Mesh Topology**: P2P full-mesh where each peer connects directly to all other room participants.
+* **Designated Caller Protocol**: Newly joined peers act as the designated offer initiators to all existing participants, preventing SDP collision glare.
+* **Screen Sharing**: Swaps video `RTCRtpSender` track dynamically with display capture track, reverting cleanly on track end.
+* **NAT Traversal**: Configured with Google public STUN servers for ICE candidate discovery.
+* **Asset Storage**: Multipart files are buffered in memory via `multer` and streamed directly to Cloudinary CDN, storing secure HTTPS URLs and public IDs in MongoDB.
+
+---
+
+## 4. System Architecture
+
+```mermaid
+flowchart TD
+    subgraph ClientLayer["Frontend Client (React 18 + Vite)"]
+        UI[React Components & Pages]
+        AuthCtx[Auth Context & Firebase SDK]
+        SocketClient[Socket.io Client]
+        WebRTCClient[WebRTC PeerConnections]
+    end
+
+    subgraph AuthLayer["Authentication Service"]
+        FA[Firebase Auth Service]
+    end
+
+    subgraph ServerLayer["Backend Server (Node.js + Express)"]
+        HTTP[Express HTTP Server]
+        AuthMW[Firebase Token Verification MW]
+        RBAC[Role & Ownership MW]
+        JoiMW[Joi Request Validation MW]
+        Controllers[API Controllers]
+        SocketServer[Socket.io Server]
+        Services[Attendance & Progress Services]
+    end
+
+    subgraph MediaLayer["External Cloud & P2P Media"]
+        Cloudinary[(Cloudinary Media Storage)]
+        Peers((WebRTC Peer Mesh))
+    end
+
+    subgraph DatabaseLayer["Database (MongoDB Atlas)"]
+        MongoDB[(MongoDB Mongoose ODM)]
+    end
+
+    %% Auth Flow
+    UI -->|1. Sign In / Token Request| FA
+    FA -->|2. ID Token JWT| UI
+    UI -->|3. REST API Requests + Bearer Token| HTTP
+
+    %% REST Pipeline
+    HTTP --> AuthMW
+    AuthMW -->|Verify ID Token| FA
+    AuthMW --> RBAC
+    RBAC --> JoiMW
+    JoiMW --> Controllers
+    Controllers --> Services
+    Services --> MongoDB
+    Controllers --> MongoDB
+    Controllers -->|Upload / Delete Media| Cloudinary
+
+    %% Real-Time & WebRTC Pipeline
+    UI -->|WebSocket Connect| SocketClient
+    SocketClient <-->|Room Join, Presence, Chat, Moderation| SocketServer
+    SocketServer <-->|Attendance Logging & Chat Hydration| MongoDB
+    SocketClient <-->|Signaling: SDP Offer/Answer, ICE| SocketServer
+    WebRTCClient <===>|Direct P2P Audio, Video, Screen Sharing| Peers
 ```
 
 ---
 
-## 4. Entity-Relationship (ER) Diagram
+## 5. Important APIs & Real-Time Events
+
+### REST API Reference
+
+| Domain | Method | Endpoint | Access | Purpose |
+|---|---|---|---|---|
+| **Users** | `POST` | `/api/users/sync` | Authenticated | Syncs/creates user profile in MongoDB from verified Firebase token |
+| **Users** | `GET` | `/api/users/me` | Authenticated | Retrieves current authenticated user profile and role |
+| **Users** | `PUT` | `/api/users/me` | Authenticated | Updates display name and avatar URL (validated by Joi) |
+| **Classrooms** | `POST` | `/api/classrooms` | Teacher | Creates a classroom and auto-generates a unique join code |
+| **Classrooms** | `GET` | `/api/classrooms` | Authenticated | Retrieves all classrooms created by or enrolled in by user |
+| **Classrooms** | `GET` | `/api/classrooms/:id` | Member | Returns classroom details, enrollment count, and teacher info |
+| **Classrooms** | `PUT` | `/api/classrooms/:id` | Owner | Updates classroom name, subject, or description |
+| **Classrooms** | `DELETE` | `/api/classrooms/:id` | Owner | Deletes classroom and cascades deletion of related records |
+| **Classrooms** | `POST` | `/api/classrooms/join` | Student | Enrolls a student using a 6-character uppercase join code |
+| **Classrooms** | `POST` | `/api/classrooms/:id/start` | Owner | Starts live session (`isLive: true`) |
+| **Classrooms** | `POST` | `/api/classrooms/:id/end` | Owner | Ends live session and finalizes active attendance records |
+| **Assignments**| `POST` | `/api/classrooms/:id/assignments` | Owner | Creates assignment with due date, max marks, and attachment |
+| **Assignments**| `GET` | `/api/classrooms/:id/assignments` | Member | Lists all assignments for a classroom |
+| **Assignments**| `POST` | `/api/assignments/:id/submit` | Student | Uploads submission archive to Cloudinary and saves record |
+| **Assignments**| `GET` | `/api/assignments/:id/submissions` | Owner | Lists all student submissions for evaluation |
+| **Assignments**| `PUT` | `/api/submissions/:id/grade` | Owner | Assigns numerical marks and feedback (validated by Joi) |
+| **Materials**  | `POST` | `/api/classrooms/:id/materials` | Owner | Uploads document to Cloudinary and creates material record |
+| **Materials**  | `GET` | `/api/classrooms/:id/materials` | Member | Lists curriculum materials for a classroom |
+| **Materials**  | `DELETE` | `/api/materials/:id` | Owner | Deletes asset from Cloudinary and removes database record |
+| **Attendance** | `GET` | `/api/classrooms/:id/attendance` | Owner | Retrieves session logs, student timestamps, and durations |
+| **Attendance** | `GET` | `/api/attendance/my` | Student | Returns student's personal attendance history across classes |
+| **Progress**   | `GET` | `/api/classrooms/:id/progress` | Member | Aggregates class attendance %, turn-in %, and grade distribution |
+| **Progress**   | `GET` | `/api/classrooms/:id/students/:studentId/details` | Owner | Returns deep-dive individual metrics, submissions, and logs |
+
+### Socket.io & WebRTC Event Reference
+
+| Event Name | Direction | Description |
+|---|---|---|
+| `classroom:join` | Client $\rightarrow$ Server | Joins classroom room, registers presence, logs attendance join |
+| `classroom:participants` | Server $\rightarrow$ Client | Transmits active room participant list to newly joined peer |
+| `classroom:user-joined` / `user-left` | Server $\rightarrow$ Room | Broadcasts participant entry or exit to room |
+| `classroom:raise-hand` / `lower-hand` | Client $\rightarrow$ Server | Updates student hand-raise state in room queue |
+| `classroom:mute-user` / `kick-user` | Teacher $\rightarrow$ Server | Forces remote mute or evicts target attendee from room |
+| `classroom:chat-message` | Client $\rightarrow$ Server | Persists message to MongoDB and broadcasts to room |
+| `classroom:chat-history` | Server $\rightarrow$ Client | Transmits past 100 historical messages upon joining room |
+| `webrtc:offer` / `webrtc:answer` | Peer $\leftrightarrow$ Server $\leftrightarrow$ Peer | Relays SDP offer/answer between initiating and target peers |
+| `webrtc:ice-candidate` | Peer $\leftrightarrow$ Server $\leftrightarrow$ Peer | Relays Trickle ICE candidates between peers |
+| `webrtc:peer-disconnected` | Server $\rightarrow$ Room | Signals peers to tear down `RTCPeerConnection` for departed user |
+
+---
+
+## 6. Data Model
 
 ```mermaid
 erDiagram
     USER ||--o{ CLASSROOM : "creates (teacher)"
     USER ||--o{ ENROLLMENT : "enrolls (student)"
-    USER ||--o{ ATTENDANCE : "participates (student)"
-    USER ||--o{ SUBMISSION : "submits (student)"
-    USER ||--o{ MESSAGE : "sends"
+    USER ||--o{ ATTENDANCE : "logs attendance"
+    USER ||--o{ SUBMISSION : "submits solution"
+    USER ||--o{ MESSAGE : "authors"
     USER ||--o{ MATERIAL : "uploads"
 
     CLASSROOM ||--o{ ENROLLMENT : "contains"
-    CLASSROOM ||--o{ ATTENDANCE : "logs"
+    CLASSROOM ||--o{ ATTENDANCE : "tracks"
     CLASSROOM ||--o{ ASSIGNMENT : "hosts"
-    CLASSROOM ||--o{ MATERIAL : "shares"
+    CLASSROOM ||--o{ MATERIAL : "stores"
     CLASSROOM ||--o{ MESSAGE : "records"
 
     ASSIGNMENT ||--o{ SUBMISSION : "receives"
@@ -186,191 +278,104 @@ erDiagram
 
 ---
 
-## 5. Authentication & Security Flow
+## 7. Trade-offs, Limitations & Future Roadmap
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Client (Browser)
-    participant FA as Firebase Auth
-    participant API as Express REST API
-    participant FAdmin as Firebase Admin SDK
-    participant DB as MongoDB Atlas
+### Architectural Trade-offs
+* **WebRTC P2P Mesh vs. SFU**: P2P full-mesh requires zero media server infrastructure and delivers ultra-low latency, but client upload bandwidth scales as $O(N)$ and total connections as $O(N^2)$, limiting practical room capacity to 6–8 active video participants.
+* **In-Memory Sockets vs. Redis Adapter**: Single-node in-memory socket state provides sub-millisecond dispatch without external infrastructure overhead, but limits real-time scaling across multiple Node.js process instances.
+* **On-Demand Aggregations vs. Pre-Calculated Rollups**: Mongoose aggregation pipelines guarantee immediate data freshness for grades and attendance at the cost of computational query overhead on large datasets.
+* **Firebase Auth vs. Custom Auth**: Firebase offloads secure password hashing, brute-force protection, and token rotation at the expense of external service dependency.
 
-    User->>FA: Sign In with Email & Password
-    FA-->>User: Returns Firebase ID Token (JWT)
-    User->>API: HTTP Request + Authorization: Bearer <ID_Token>
-    API->>FAdmin: verifyIdToken(token)
-    alt Invalid / Expired Token
-        FAdmin-->>API: Token Verification Error
-        API-->>User: 401 Unauthorized
-    else Valid Token
-        FAdmin-->>API: Decoded Token { uid, email }
-        API->>DB: User.findOne({ firebaseUid: decoded.uid })
-        alt User Not Found in DB
-            API-->>User: 404 Please Sync Profile
-        else User Exists
-            API->>API: Attach req.user & req.firebaseUser
-            API->>API: Execute Role & Ownership Middleware
-            API->>DB: Process Controller Query
-            DB-->>API: Return Result
-            API-->>User: 200 OK + JSON Response
-        end
-    end
-```
+### Current Limitations
+* **Mesh Scalability**: Video quality and client performance degrade beyond 6–8 concurrent video broadcasters.
+* **Single-Node State**: Room presence and signaling state reside in process memory.
+* **Public STUN Only**: Lacks dedicated TURN relay infrastructure; clients behind strict symmetric NATs may experience connection failures.
+* **Synchronous Memory Uploads**: Large file uploads buffer in Node.js server memory before streaming to Cloudinary.
+
+### Future Roadmap
+* **SFU Integration**: Adopt LiveKit or Mediasoup to switch to $O(1)$ client uplink, enabling 100+ participant lectures.
+* **Clustered Socket State**: Integrate `@socket.io/redis-adapter` for multi-instance horizontal scaling.
+* **TURN Relay Infrastructure**: Deploy dedicated coturn servers for guaranteed firewall traversal.
+* **Direct Client Uploads**: Use backend signed upload signatures allowing clients to upload large submission archives directly to Cloudinary CDN.
+* **Automated Testing & CI/CD**: Add Jest, Supertest, and Playwright suites to GitHub Actions.
 
 ---
 
-## 6. WebRTC Signaling & Glare-Free Peer Connection Flow
+## 8. Tech Stack & Directory Structure
 
-To prevent **WebRTC Glare** (dual-offer collisions when two peers attempt to call each other at the exact same moment), ClassSphere employs a **Designated Caller Protocol**:
-1. When a new peer joins, the server returns the existing participants list (`classroom:participants`).
-2. The newly joined peer initiates the SDP Offer (`webrtc:offer`) to each existing participant.
-3. Existing participants do NOT initiate an offer; they receive the offer, configure remote description, and send an SDP Answer (`webrtc:answer`).
+### Tech Stack
+| Technology | Role in ClassSphere |
+|---|---|
+| **React 18 + Vite** | Component-driven frontend SPA, fast development server, and optimized bundling |
+| **TailwindCSS + Framer Motion** | Utility styling, responsive layouts, and hardware-accelerated drawer transitions |
+| **Socket.io** | Bi-directional WebSocket signaling, room presence, moderation, and live chat |
+| **WebRTC** | Native browser peer-to-peer audio, video, and screen sharing |
+| **Node.js + Express** | REST API layer, middleware pipeline, and WebSocket server integration |
+| **MongoDB Atlas + Mongoose** | NoSQL cloud database with compound indexes and multi-stage aggregation pipelines |
+| **Firebase Auth & Admin SDK** | Client authentication and stateless server-side JWT verification |
+| **Joi** | Deterministic request body schema validation |
+| **Cloudinary + Multer** | Multipart media buffering and global CDN asset distribution |
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor PeerB as Joining Peer (Student B)
-    participant Socket as Socket.io Server
-    actor PeerA as Existing Peer (Teacher A)
-
-    PeerB->>Socket: emit("classroom:join", { classroomId })
-    Socket->>PeerB: emit("classroom:participants", [PeerA])
-    Socket->>PeerA: emit("classroom:user-joined", PeerB)
-
-    Note over PeerB,PeerA: Peer B is designated initiator to Peer A
-    PeerB->>PeerB: createOffer() -> setLocalDescription(offer)
-    PeerB->>Socket: emit("webrtc:offer", { toPeerId: PeerA, offer })
-    Socket->>PeerA: emit("webrtc:offer", { fromPeerId: PeerB, offer })
-
-    PeerA->>PeerA: setRemoteDescription(offer) -> createAnswer() -> setLocalDescription(answer)
-    PeerA->>Socket: emit("webrtc:answer", { toPeerId: PeerB, answer })
-    Socket->>PeerB: emit("webrtc:answer", { fromPeerId: PeerA, answer })
-    PeerB->>PeerB: setRemoteDescription(answer)
-
-    Note over PeerB,PeerA: ICE Candidate Exchange (Trickle ICE)
-    PeerB->>Socket: emit("webrtc:ice-candidate", candidate)
-    Socket->>PeerA: emit("webrtc:ice-candidate", candidate)
-    PeerA->>PeerA: addIceCandidate(candidate)
-
-    Note over PeerA,PeerB: Direct P2P Audio / Video / Screen Stream Established
-```
-
----
-
-## 7. Role-Specific Information Architecture
-
-| Feature / Section | Teacher View | Student View |
-|---|---|---|
-| **Dashboard** | Active classes, total students, pending grading, live class triggers | Enrolled classes, upcoming due dates, attendance stats, join class trigger |
-| **My Classes** | Created classes, member counts, join codes, quick live launch | Enrolled classes, instructor details, subject cards |
-| **Assignments** | Assignment creator, submission counts, grading interface & feedback modal | Assignment list, status badges (Turned In / Missing / Graded), upload submission drawer |
-| **Students / Attendance** | **Students**: Roster across all classes, student search, individual performance drawer | **Attendance**: Dedicated personal attendance records, total sessions, and duration breakdown |
-| **Progress** | **Progress**: Aggregate class health analytics, benchmark distributions, student leaderboard | **My Progress**: Personal academic growth metrics, turn-in rate, average score, and performance stats |
-| **Profile** | Single-card profile editing, avatar customization, and password update | Single-card profile editing, avatar customization, and password update |
-
----
-
-## 8. Scalability & Engineering Tradeoffs
-
-### Current Architecture: WebRTC Full-Mesh Peer-to-Peer (P2P)
-In ClassSphere's current architecture, media streams flow directly between client browsers without passing through a media server:
-* **Advantages**:
-  * **Ultra-Low Latency**: Direct peer-to-peer UDP packet transmission.
-  * **Zero Media Server Cost**: The backend only routes lightweight signaling messages (SDP offers/answers and ICE candidates).
-  * **End-to-End Encryption (E2EE)**: Native WebRTC encryption without server-side decryption.
-* **Limitations**:
-  * **Upstream Bandwidth Scaling**: Each participant sends their video/audio stream to $N-1$ peers. For $N$ participants, the network load is $O(N^2)$.
-  * **Client CPU Utilization**: Encoding multiple outgoing streams and decoding incoming streams limits mesh rooms to **6–8 simultaneous video participants**.
-
-### Production Upgrade Path: Selective Forwarding Unit (SFU)
-For institutional deployments with 50–500+ participants per lecture, the platform can transition from P2P Full-Mesh to an **SFU Media Server** (e.g. Mediasoup or LiveKit):
-
+### Directory Structure
 ```text
-[Mesh Architecture: O(N^2)]               [SFU Architecture: O(N)]
-
-     Peer A ─── Peer B                          Peer A     Peer B
-       │  ╲   ╱   │                                ╲         ╱
-       │   ╳    │                                   ▼       ▲
-       │  ╱   ╲   │                               ┌───────────┐
-     Peer C ─── Peer D                            │    SFU    │
-                                                  │MediaServer│
-                                                  └───────────┘
-                                                    ▲       ▼
-                                                   ╱         ╲
-                                                Peer C     Peer D
+ClassSphere/
+├── client/                           # React Frontend SPA
+│   ├── src/
+│   │   ├── components/               # UI components (Classroom, Navbar, Drawers, etc.)
+│   │   ├── context/                  # AuthContext, SocketContext
+│   │   ├── firebase/                 # Firebase client SDK initialization
+│   │   ├── hooks/                    # Custom hooks (useAuth, useSocket, useWebRTC)
+│   │   ├── pages/                    # Route views (Dashboard, LiveClassroom, Assignments, etc.)
+│   │   ├── routes/                   # AppRoutes and ProtectedRoute guards
+│   │   ├── services/                 # Axios API instances
+│   │   └── utils/                    # CSV export utilities
+│   ├── package.json
+│   └── vite.config.js
+│
+├── server/                           # Node.js + Express Backend
+│   ├── src/
+│   │   ├── config/                   # MongoDB, Firebase Admin, Cloudinary configurations
+│   │   ├── controllers/              # REST request handlers
+│   │   ├── middleware/               # Auth verification, RBAC, Joi validation, error handling
+│   │   ├── models/                   # Mongoose schemas (User, Classroom, Assignment, etc.)
+│   │   ├── routes/                   # Express route definitions
+│   │   ├── schemas/                  # Joi validation schemas
+│   │   ├── services/                 # Business logic (attendance, progress calculations)
+│   │   ├── sockets/                  # Socket.io handlers (classroom, chat, webrtc)
+│   │   ├── app.js                    # Express app configuration
+│   │   └── server.js                 # Server bootstrap
+│   └── package.json
+│
+├── package.json                      # Root scripts
+└── README.md                         # Engineering documentation
 ```
 
-* **How SFU Solves Scaling**:
-  1. Each client publishes **1 uplink video/audio stream** to the SFU server ($O(1)$ client upload bandwidth).
-  2. The SFU forwards incoming RTP packets to all subscribers without re-encoding ($O(N)$ server throughput).
-  3. **Simulcast & SVC**: The publisher sends multiple resolutions (1080p, 720p, 360p), and the SFU dynamically forwards lower bitrates to peers with weaker network connections.
-
 ---
 
-## 9. REST API Summary
-
-### Authentication & Users
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/users/sync` | Authenticated | Create/sync user profile from Firebase auth |
-| `GET` | `/api/users/me` | Authenticated | Get current user profile and role |
-| `PUT` | `/api/users/me` | Authenticated | Update user display name or avatar URL |
-
-### Classrooms & Sessions
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/classrooms` | Teacher | Create a new classroom |
-| `GET` | `/api/classrooms` | Authenticated | Get user's classrooms (created or enrolled) |
-| `GET` | `/api/classrooms/:id` | Member | Get classroom details and participant counts |
-| `PUT` | `/api/classrooms/:id` | Owner | Update classroom name, subject, or description |
-| `DELETE` | `/api/classrooms/:id` | Owner | Delete classroom and cascade clean records |
-| `POST` | `/api/classrooms/join` | Student | Join classroom with 6-character code |
-| `GET` | `/api/classrooms/:id/participants` | Member | List enrolled students and teacher |
-| `POST` | `/api/classrooms/:id/start` | Owner | Start live session (`isLive = true`) |
-| `POST` | `/api/classrooms/:id/end` | Owner | End live session & finalize student attendance |
-
-### Materials & Handouts
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/classrooms/:id/materials` | Owner | Upload file to Cloudinary & record material |
-| `GET` | `/api/classrooms/:id/materials` | Member | List learning materials for a classroom |
-| `DELETE` | `/api/materials/:id` | Owner | Delete material from Cloudinary & database |
-
-### Assignments & Submissions
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/classrooms/:id/assignments` | Owner | Create assignment with due date & attachments |
-| `GET` | `/api/classrooms/:id/assignments` | Member | List all assignments for a classroom |
-| `GET` | `/api/assignments/:id` | Member | Get assignment details and submission status |
-| `PUT` | `/api/assignments/:id` | Owner | Update assignment details and due date |
-| `DELETE` | `/api/assignments/:id` | Owner | Delete assignment and associated submissions |
-| `POST` | `/api/assignments/:id/submit` | Student | Submit assignment solution file to Cloudinary |
-| `GET` | `/api/assignments/:id/submissions` | Owner | View all student submissions for an assignment |
-| `GET` | `/api/assignments/:id/my-submission` | Student | View student's own submission and marks |
-| `PUT` | `/api/submissions/:id/grade` | Owner | Grade submission with score and written feedback |
-
-### Attendance & Progress Analytics
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/classrooms/:id/attendance` | Owner | Get classroom attendance logs & durations |
-| `GET` | `/api/attendance/my` | Student | Get student attendance history across all classes |
-| `GET` | `/api/classrooms/:id/progress` | Member | Compute real-time classroom analytics and averages |
-| `GET` | `/api/classrooms/:id/students/:studentId/details` | Owner | Get detailed individual performance records |
-
----
-
-## 10. Environment Setup & Installation
+## 9. Running the Project
 
 ### Prerequisites
 * **Node.js**: v18.x or v20.x
 * **MongoDB**: MongoDB Atlas URI or local instance (`mongodb://localhost:27017/classsphere`)
-* **Firebase Project**: Firebase Auth enabled (Email/Password) with Firebase Admin service account credentials
+* **Firebase Project**: Firebase Auth enabled (Email/Password) with Admin SDK credentials
 * **Cloudinary Account**: Cloud Name, API Key, and API Secret
 
-### 1. Backend Configuration (`server/.env`)
-Create `server/.env` based on `server/.env.example`:
+---
+
+### Step 1: Install Dependencies
+```bash
+# Server dependencies
+cd server && npm install
+
+# Client dependencies
+cd ../client && npm install
+```
+
+---
+
+### Step 2: Environment Configuration
+
+#### Backend (`server/.env`)
 ```env
 PORT=5000
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/classsphere?retryWrites=true&w=majority
@@ -382,42 +387,46 @@ FIREBASE_PROJECT_ID=your-firebase-project-id
 FIREBASE_CLIENT_EMAIL=your-firebase-adminsdk@your-project.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n"
 
-# Cloudinary Storage
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+# Cloudinary CDN Storage
+CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-api-key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 ```
 
-### 2. Frontend Configuration (`client/.env`)
-Create `client/.env` based on `client/.env.example`:
+#### Frontend (`client/.env`)
 ```env
+# Firebase Client SDK
 VITE_FIREBASE_API_KEY=your-firebase-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your-project-id
 VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+VITE_FIREBASE_APP_ID=your-firebase-app-id
 
+# Service Endpoints
 VITE_API_URL=http://localhost:5000/api
 VITE_SOCKET_URL=http://localhost:5000
 ```
 
-### 3. Running Locally
+---
 
-**Concurrently from Root:**
+### Step 3: Start Development Servers
+
 ```bash
+# Concurrently from root:
 npm run dev
+
+# Or in separate terminals:
+# Terminal 1 (Backend):
+cd server && npm run dev
+
+# Terminal 2 (Frontend):
+cd client && npm run dev
 ```
 
-**Or Individually:**
-```bash
-# Terminal 1: Backend Server (Port 5000)
-cd server
-npm install
-npm run dev
+---
 
-# Terminal 2: Frontend Client (Port 5173)
-cd client
-npm install
-npm run dev
-```
+### Step 4: Verification
+1. Navigate to `http://localhost:5173` in a modern browser.
+2. Register as a **Teacher** to create a classroom, start live lectures, and publish assignments.
+3. In an incognito window, register as a **Student** to join using the 6-character code and test live video, chat, hand-raising, and coursework workflows.
