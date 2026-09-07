@@ -38,28 +38,28 @@ ClassSphere bridges this gap by unifying synchronous live collaboration with asy
 
 ### Frontend (React 18 + Vite)
 * **State & Networking**: React Context (`AuthContext`, `SocketContext`) maintains persistent auth sessions and WebSocket connections across route transitions.
-* **Custom WebRTC Hook (`useWebRTC`)**: Encapsulates `RTCPeerConnection` lifecycles, media tracks (audio, video, `getDisplayMedia` screen sharing), renegotiation, and ICE candidate buffering.
+* **WebRTC Media Hook (`useWebRTC`)**: Manages `RTCPeerConnection` instances, media tracks (audio, video, `getDisplayMedia` screen sharing), and ICE candidate exchange.
 * **Routing & Security**: `react-router-dom` with role-aware `ProtectedRoute` guards verifying Firebase JWTs and user roles before rendering views.
-* **UI Layer**: Styled with TailwindCSS and Framer Motion for hardware-accelerated drawer transitions and modal animations.
+* **UI Layer**: Styled with TailwindCSS and Framer Motion for responsive layouts and modal animations.
 
 ### Backend (Node.js + Express + MongoDB)
 * **Layered Architecture**: Express REST routes delegate to controllers and business logic services (`attendance.service.js`, `progress.service.js`).
 * **Authentication & RBAC**: `auth.middleware.js` verifies Firebase JWTs via Firebase Admin SDK, maps tokens to MongoDB `User` documents, and enforces role and classroom ownership permissions (`requireRole`, `requireClassroomOwner`, `requireClassroomMember`).
-* **Deterministic Request Validation**: Joi validation schemas executed via reusable `validateBody` middleware sanitize input payloads prior to controller execution.
-* **Database & Indexing**: MongoDB Atlas with Mongoose ODM utilizing compound unique indexes (`{ classroom: 1, student: 1 }` on enrollments; `{ assignment: 1, student: 1 }` on submissions) and multi-stage aggregation pipelines for real-time analytics.
-* **Centralized Error Handling**: Global error middleware catches operational errors, Mongoose validation failures, Firebase token errors, and unhandled exceptions.
+* **Request Validation**: Joi validation schemas executed via reusable `validateBody` middleware validate input payloads before controllers run.
+* **Database & Indexing**: MongoDB Atlas with Mongoose ODM using compound unique indexes (`{ classroom: 1, student: 1 }` on enrollments; `{ assignment: 1, student: 1 }` on submissions) and aggregation pipelines for progress analytics.
+* **Error Handling**: Centralized error middleware catches operational errors, Mongoose validation errors, and unhandled exceptions.
 
 ### Real-Time Layer (Socket.io)
-* **Room Sandboxing**: Live classroom state is scoped to isolated rooms (`classroom:${classroomId}`) to prevent signal leakage.
+* **Isolated Room Namespaces**: Scoped to `classroom:${classroomId}` to prevent signal leakage between classes.
 * **Dynamic In-Memory Presence**: Server-side map tracks active participants, media states, and hand-raise queues.
-* **Database Hydration**: Preloads the latest 100 historical chat messages from MongoDB upon room entry.
-* **Lifecycle-Aware Attendance**: Records student join timestamps on `classroom:join`, calculates duration ($leftAt - joinedAt$) on departure or socket disconnect, and categorizes status (`present`, `partial`, `absent`).
+* **Chat History Hydration**: Loads the past 100 chat messages from MongoDB upon room entry.
+* **Attendance Duration Tracking**: Records entry timestamps on `classroom:join`, calculates session duration ($leftAt - joinedAt$) on departure or socket disconnect, and categorizes status (`present`, `partial`, `absent`).
 
 ### Media Pipeline (WebRTC + Cloudinary)
-* **Mesh Topology**: Browser-native WebRTC full-mesh streaming for direct audio/video transmission without media servers.
-* **Designated Caller Protocol**: Newly joined peers act as the designated offer initiators to all existing participants, preventing SDP collision glare.
-* **Screen Sharing**: Swaps video `RTCRtpSender` track dynamically with display capture track, reverting cleanly on track end.
-* **Asset Storage**: Multipart files are buffered in memory via `multer` and streamed directly to Cloudinary CDN, storing secure HTTPS URLs in MongoDB.
+* **Mesh Topology**: P2P full-mesh where each peer connects directly to all other room participants.
+* **Signaling Protocol**: Newly joined peers initiate offers to existing participants to prevent WebRTC offer collisions.
+* **Screen Sharing**: Swaps video track dynamically with display capture track without reconnecting the call.
+* **Asset Storage**: Multipart files are buffered in memory via `multer` and streamed directly to Cloudinary CDN, storing secure URLs in MongoDB.
 
 ---
 
@@ -290,42 +290,28 @@ erDiagram
 ## 7. Trade-offs, Limitations & Future Roadmap
 
 ### Architectural Trade-offs
-* **WebRTC P2P Mesh vs. SFU**: P2P full-mesh requires zero media server infrastructure and delivers ultra-low latency, but client upload bandwidth scales as $O(N)$ and total connections as $O(N^2)$, limiting practical room capacity to 6–8 active video participants.
-* **In-Memory Sockets vs. Redis Adapter**: Single-node in-memory socket state provides sub-millisecond dispatch without external infrastructure overhead, but limits real-time scaling across multiple Node.js process instances.
-* **On-Demand Aggregations vs. Pre-Calculated Rollups**: Mongoose aggregation pipelines guarantee immediate data freshness for grades and attendance at the cost of computational query overhead on large datasets.
-* **Firebase Auth vs. Custom Auth**: Firebase offloads secure password hashing, brute-force protection, and token rotation at the expense of external service dependency.
+* **WebRTC P2P Mesh vs. SFU**: P2P mesh requires zero media server hosting cost and delivers ultra-low latency, but client upload bandwidth scales per participant, making it ideal for small interactive groups (6–8 video participants).
+* **In-Memory Sockets vs. Redis Adapter**: Single-node in-memory socket state provides fast dispatch without extra infrastructure, but limits real-time scaling across multiple server instances.
+* **On-Demand Aggregations vs. Pre-Calculated Rollups**: MongoDB aggregation pipelines guarantee up-to-date grades and attendance metrics without maintaining separate summary tables.
+* **Firebase Auth vs. Custom Auth**: Firebase handles password hashing, brute-force protection, and token rotation while allowing custom role-based authorization on the backend.
 
 ### Current Limitations
-* **Mesh Scalability**: Video quality and client performance degrade beyond 6–8 concurrent video broadcasters.
-* **Single-Node State**: Room presence and signaling state reside in process memory.
-* **Public STUN Only**: Lacks dedicated TURN relay infrastructure; clients behind strict symmetric NATs may experience connection failures.
-* **Synchronous Memory Uploads**: Large file uploads buffer in Node.js server memory before streaming to Cloudinary.
+* **Mesh Scalability**: Video quality and client performance depend on user device bandwidth when more than 6–8 peers publish video simultaneously.
+* **Single-Node State**: Room presence and signaling state reside in server process memory.
+* **Public STUN Only**: Relies on Google public STUN servers without a dedicated TURN relay fallback for strict firewalls.
+* **Synchronous File Buffering**: Uploads buffer temporarily in server memory before streaming to Cloudinary.
 
 ### Future Roadmap
-* **SFU Integration**: Adopt LiveKit or Mediasoup to switch to $O(1)$ client uplink, enabling 100+ participant lectures.
-* **Clustered Socket State**: Integrate `@socket.io/redis-adapter` for multi-instance horizontal scaling.
-* **TURN Relay Infrastructure**: Deploy dedicated coturn servers for guaranteed firewall traversal.
-* **Direct Client Uploads**: Use backend signed upload signatures allowing clients to upload large submission archives directly to Cloudinary CDN.
-* **Automated Testing & CI/CD**: Add Jest, Supertest, and Playwright suites to GitHub Actions.
+* **SFU Integration**: Adopt an SFU (e.g., LiveKit or Mediasoup) to enable large lecture webinars with 100+ attendees.
+* **Clustered Sockets**: Integrate `@socket.io/redis-adapter` for multi-instance server scaling.
+* **TURN Relay Infrastructure**: Deploy dedicated TURN servers (e.g., coturn) for restrictive corporate network traversal.
+* **Direct Client Uploads**: Use signed upload signatures for direct client-to-Cloudinary uploads.
+* **Automated CI/CD**: Add Jest, Supertest, and Playwright test suites to GitHub Actions.
 
 ---
 
-## 8. Tech Stack & Directory Structure
+## 8. Directory Structure
 
-### Tech Stack
-| Technology | Role in ClassSphere |
-|---|---|
-| **React 18 + Vite** | Component-driven frontend SPA, fast development server, and optimized bundling |
-| **TailwindCSS + Framer Motion** | Utility styling, responsive layouts, and hardware-accelerated drawer transitions |
-| **Socket.io** | Bi-directional WebSocket signaling, room presence, moderation, and live chat |
-| **WebRTC** | Native browser peer-to-peer audio, video, and screen sharing |
-| **Node.js + Express** | REST API layer, middleware pipeline, and WebSocket server integration |
-| **MongoDB Atlas + Mongoose** | NoSQL cloud database with compound indexes and multi-stage aggregation pipelines |
-| **Firebase Auth & Admin SDK** | Client authentication and stateless server-side JWT verification |
-| **Joi** | Deterministic request body schema validation |
-| **Cloudinary + Multer** | Multipart media buffering and global CDN asset distribution |
-
-### Directory Structure
 ```text
 ClassSphere/
 ├── client/                           # React Frontend SPA
