@@ -92,24 +92,28 @@ export const Login = () => {
           )}
 
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
             <Input
               label="Academic Email"
               type="email"
+              name="academic_email"
               placeholder="e.g. name@university.edu"
               icon={Mail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
               required
             />
 
             <Input
               label="Password"
               type="password"
-              placeholder="••••••••"
+              name="account_password"
+              placeholder="Enter your password"
               icon={Lock}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
 

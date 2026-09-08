@@ -111,7 +111,7 @@ export const AssignmentsPage = () => {
           <select
             value={selectedClassroomId}
             onChange={(e) => setSelectedClassroomId(e.target.value)}
-            className="w-full sm:w-64 px-3 py-1.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
+            className="w-full sm:w-64 px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 shadow-xs"
           >
             <option value="all">All Classrooms ({totalAssignmentsCount})</option>
             {classrooms.map((c) => (
@@ -223,23 +223,28 @@ export const AssignmentsPage = () => {
                             </Button>
                           ) : (
                             <div className="w-full flex items-center justify-between gap-2">
-                              {assign.submission ? (
-                                <div className="flex items-center justify-between w-full">
-                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    {assign.submission.status === 'graded'
-                                      ? `Graded: ${assign.submission.marks}/${assign.maxMarks}`
-                                      : 'Submitted'}
-                                  </span>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setSubmitAssignment(assign)}
-                                    className="text-xs"
-                                  >
-                                    View / Resubmit
-                                  </Button>
-                                </div>
+                              {assign.mySubmission || assign.submission ? (
+                                (() => {
+                                  const sub = assign.mySubmission || assign.submission;
+                                  return (
+                                    <div className="flex items-center justify-between w-full">
+                                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        {sub.status === 'graded'
+                                          ? `Graded: ${sub.marks}/${assign.maxMarks}`
+                                          : 'Submitted'}
+                                      </span>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSubmitAssignment(assign)}
+                                        className="text-xs"
+                                      >
+                                        Resubmit
+                                      </Button>
+                                    </div>
+                                  );
+                                })()
                               ) : (
                                 <Button
                                   variant="primary"

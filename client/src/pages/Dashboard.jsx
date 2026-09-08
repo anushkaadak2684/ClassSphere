@@ -13,6 +13,7 @@ import {
   LogIn,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
+import useSocket from '../hooks/useSocket';
 import classroomService from '../services/classroom.service';
 import AppLayout from '../components/layout/AppLayout';
 import ClassroomCard from '../components/classroom/ClassroomCard';
@@ -27,6 +28,7 @@ import { motion } from 'framer-motion';
 
 export const Dashboard = () => {
   const { user, isTeacher, isStudent } = useAuth();
+  const { socket, isConnected } = useSocket();
   const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,6 +53,27 @@ export const Dashboard = () => {
   useEffect(() => {
     fetchClassrooms();
   }, []);
+
+  // Listen to live session status updates on Dashboard
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleLiveStatus = ({ classroomId, isLive }) => {
+      setClassrooms((prev) =>
+        prev.map((c) => (c._id === classroomId ? { ...c, isLive } : c))
+      );
+    };
+
+    socket.on('classroom:live-status', handleLiveStatus);
+    socket.on('classroom:started', ({ classroomId }) => handleLiveStatus({ classroomId, isLive: true }));
+    socket.on('classroom:ended', ({ classroomId }) => handleLiveStatus({ classroomId, isLive: false }));
+
+    return () => {
+      socket.off('classroom:live-status', handleLiveStatus);
+      socket.off('classroom:started');
+      socket.off('classroom:ended');
+    };
+  }, [socket, isConnected]);
 
   const handleClassroomCreated = (newClassroom) => {
     setClassrooms((prev) => [newClassroom, ...prev]);

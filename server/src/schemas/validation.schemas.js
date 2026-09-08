@@ -4,15 +4,13 @@ const Joi = require('joi');
  * User Schemas
  */
 const syncUserSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(100).required().messages({
-    'string.empty': 'User name cannot be empty',
-    'string.min': 'Name must be at least 2 characters',
-    'any.required': 'Name is required',
+  name: Joi.string().trim().min(1).max(100).allow('').optional().messages({
+    'string.min': 'Name must be at least 1 character',
   }),
-  role: Joi.string().valid('teacher', 'student').required().messages({
+  role: Joi.string().valid('teacher', 'student').optional().messages({
     'any.only': 'Role must be either teacher or student',
-    'any.required': 'Role is required',
   }),
+  email: Joi.string().email().optional(),
   avatarUrl: Joi.string().uri().allow('').optional().messages({
     'string.uri': 'Avatar URL must be a valid URL',
   }),

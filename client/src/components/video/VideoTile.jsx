@@ -16,22 +16,37 @@ export const VideoTile = ({
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
+      videoRef.current.play().catch((err) => {
+        // Autoplay may require user interaction in some browsers for unmuted streams
+        console.warn('[VideoTile] play error or policy:', err.message);
+      });
     }
   }, [stream]);
 
-  const hasActiveVideo = isVideoEnabled && stream && stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live');
+  const videoTrack = stream?.getVideoTracks()?.find((t) => t.enabled && t.readyState === 'live');
+  const isScreenTrack = Boolean(
+    videoTrack &&
+      (videoTrack.label.toLowerCase().includes('screen') ||
+        videoTrack.label.toLowerCase().includes('window') ||
+        videoTrack.label.toLowerCase().includes('display') ||
+        videoTrack.label.toLowerCase().includes('monitor'))
+  );
+
+  const hasActiveVideo = Boolean(isVideoEnabled && stream && videoTrack);
 
   return (
-    <div className="relative w-full h-full min-h-[180px] bg-slate-900 rounded-xl overflow-hidden shadow-md flex items-center justify-center border border-slate-800 group">
+    <div className="relative w-full h-full min-h-[180px] bg-slate-900 rounded-2xl overflow-hidden shadow-md flex items-center justify-center border border-slate-800 group">
       {/* Video Element */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted={isLocal} // Always mute self to avoid echo feedback
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
+        className={`w-full h-full transition-opacity duration-300 ${
+          isScreenTrack ? 'object-contain bg-black' : 'object-cover'
+        } ${
           hasActiveVideo ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'
-        } ${isLocal ? 'scale-x-[-1]' : ''}`} // Mirror local camera preview
+        } ${isLocal && !isScreenTrack ? 'scale-x-[-1]' : ''}`} // Mirror local camera preview, but never screen shares
       />
 
       {/* Avatar Fallback when camera is disabled */}

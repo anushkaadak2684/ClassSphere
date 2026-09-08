@@ -47,7 +47,7 @@ export const CreateClassroomModal = ({ isOpen, onClose, onCreated, onClassroomCr
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Classroom">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg border border-rose-200">
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl border border-rose-200 dark:border-rose-800 font-medium">
             {error}
           </div>
         )}
@@ -71,7 +71,7 @@ export const CreateClassroomModal = ({ isOpen, onClose, onCreated, onClassroomCr
         />
 
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
             Description (Optional)
           </label>
           <textarea
@@ -80,11 +80,11 @@ export const CreateClassroomModal = ({ isOpen, onClose, onCreated, onClassroomCr
             placeholder="Brief overview of the syllabus, objectives, or instructions..."
             value={formData.description}
             onChange={handleChange}
-            className="block w-full rounded-lg border border-slate-300 bg-white text-slate-900 text-sm px-3.5 py-2.5 placeholder-slate-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+            className="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs sm:text-sm px-3.5 py-2.5 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
           />
         </div>
 
-        <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+        <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
           <Button variant="outline" size="md" onClick={onClose} disabled={loading}>
             Cancel
           </Button>

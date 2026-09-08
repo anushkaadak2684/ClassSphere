@@ -82,11 +82,53 @@ export const LiveClassroom = () => {
     };
   }, [classroomId]);
 
+  const isEndingRef = useRef(false);
+  const hasAutoStartedRef = useRef(false);
+
+  // Auto-start live class ONCE if teacher opens the Live Classroom directly
+  useEffect(() => {
+    if (!classroom || classroom.isLive || !isTeacher || hasAutoStartedRef.current || isEndingRef.current) return;
+    const isOwnerTeacher = classroom.teacher?._id === user?._id || classroom.teacher === user?._id;
+    if (!isOwnerTeacher) return;
+
+    hasAutoStartedRef.current = true;
+    const autoStartLive = async () => {
+      try {
+        const updated = await classroomService.startLiveSession(classroomId);
+        setClassroom(updated);
+        if (socket) {
+          socket.emit('classroom:started', { classroomId });
+        }
+      } catch (err) {
+        console.error('[Auto start live error]:', err);
+      }
+    };
+    autoStartLive();
+  }, [classroom?.isLive, isTeacher, user?._id, classroomId, socket]);
+
+  // Polling fallback for students in the waiting lobby
+  useEffect(() => {
+    if (!classroom || classroom.isLive || isEndingRef.current) return;
+    const isOwnerTeacher = isTeacher && (classroom.teacher?._id === user?._id || classroom.teacher === user?._id);
+    if (isOwnerTeacher) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const data = await classroomService.getClassroomById(classroomId);
+        if (data?.isLive) {
+          setClassroom(data);
+        }
+      } catch (err) {
+        console.warn('[Lobby poll error]:', err);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [classroom?.isLive, isTeacher, user?._id, classroomId]);
+
   // Join Classroom & Initialize Media
   useEffect(() => {
     if (!socket || !isConnected || !classroomId || !user) return;
-
-    let cleanupFn = () => {};
 
     const joinRoomAndMedia = async () => {
       const stream = await startLocalMedia();
@@ -160,6 +202,14 @@ export const LiveClassroom = () => {
       );
     };
 
+    const handleLiveStatus = ({ isLive }) => {
+      setClassroom((prev) => (prev ? { ...prev, isLive } : prev));
+    };
+
+    const handleClassroomStarted = () => {
+      setClassroom((prev) => (prev ? { ...prev, isLive: true } : prev));
+    };
+
     const handleForceMute = () => {
       if (isAudioEnabled) {
         toggleAudio();
@@ -172,6 +222,7 @@ export const LiveClassroom = () => {
     };
 
     const handleClassroomEnded = () => {
+      isEndingRef.current = true;
       alert('The teacher has ended this live session.');
       navigate(`/classrooms/${classroomId}`);
     };
@@ -179,6 +230,8 @@ export const LiveClassroom = () => {
     socket.on('classroom:user-joined', handleUserJoined);
     socket.on('classroom:user-left', handleUserLeft);
     socket.on('classroom:participants', handleRoomParticipants);
+    socket.on('classroom:live-status', handleLiveStatus);
+    socket.on('classroom:started', handleClassroomStarted);
     socket.on('chat:message', handleChatMessage);
     socket.on('chat:history', handleChatHistory);
     socket.on('hand:updated', handleHandStatus);
@@ -192,6 +245,8 @@ export const LiveClassroom = () => {
       socket.off('classroom:user-joined', handleUserJoined);
       socket.off('classroom:user-left', handleUserLeft);
       socket.off('classroom:participants', handleRoomParticipants);
+      socket.off('classroom:live-status', handleLiveStatus);
+      socket.off('classroom:started', handleClassroomStarted);
       socket.off('chat:message', handleChatMessage);
       socket.off('chat:history', handleChatHistory);
       socket.off('hand:updated', handleHandStatus);
@@ -201,7 +256,7 @@ export const LiveClassroom = () => {
       socket.off('classroom:ended', handleClassroomEnded);
       cleanupMedia();
     };
-  }, [socket, isConnected, classroomId, user?._id]);
+  }, [socket, isConnected, classroomId, user?._id, classroom?.isLive]);
 
   const handleSendMessage = useCallback(
     (messageData) => {
@@ -260,6 +315,10 @@ export const LiveClassroom = () => {
   const handleEndClass = async () => {
     if (window.confirm('Are you sure you want to end this live session for all participants?')) {
       try {
+        isEndingRef.current = true;
+        if (socket) {
+          socket.emit('classroom:ended', { classroomId });
+        }
         await classroomService.endLiveSession(classroomId);
         navigate(`/classrooms/${classroomId}`);
       } catch (err) {
@@ -293,6 +352,57 @@ export const LiveClassroom = () => {
 
   const isClassroomTeacher = isTeacher && (classroom.teacher?._id === user?._id || classroom.teacher === user?._id);
 
+  // Student Waiting Lobby State (when session is not live yet)
+  if (!classroom.isLive && !isClassroomTeacher) {
+    return (
+      <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center text-white relative bg-grid-pattern">
+        <div className="absolute top-6 left-6">
+          <Link to={`/classrooms/${classroomId}`}>
+            <Button variant="outline" size="sm" icon={ArrowLeft} className="border-slate-800 text-slate-300">
+              Back to Classroom Hub
+            </Button>
+          </Link>
+        </div>
+
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-brand-950/80 border border-brand-800/80 flex items-center justify-center text-brand-400 mb-5 relative">
+            <Video className="w-8 h-8 animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full animate-ping" />
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full" />
+          </div>
+
+          <Badge variant="warning" size="md" className="mb-3">
+            Waiting for Teacher to Start
+          </Badge>
+
+          <h2 className="text-xl font-bold text-white mb-1.5">{classroom.name}</h2>
+          <p className="text-xs text-slate-400 mb-6">
+            Subject: <strong className="text-slate-200">{classroom.subject}</strong> • Join Code:{' '}
+            <span className="font-mono text-brand-400 font-bold">{classroom.joinCode}</span>
+          </p>
+
+          <div className="w-full bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 text-xs text-slate-400 space-y-2 mb-6">
+            <p>Your live classroom connection is active in the lobby.</p>
+            <p className="text-[11px] text-slate-500">
+              As soon as your instructor clicks <span className="text-emerald-400 font-semibold">"Go Live"</span>, this window will automatically launch into the live lecture video stream.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 w-full">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => navigate(`/classrooms/${classroomId}`)}
+              className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+            >
+              Return to Hub
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col overflow-hidden select-none transition-colors duration-200">
       {/* Top Header Bar */}
@@ -320,14 +430,14 @@ export const LiveClassroom = () => {
           </div>
         </div>
 
-        {/* Screen Sharing Active Status Bar */}
+        {/* Screen Sharing Active Status Bar in Header */}
         {isScreenSharing && (
-          <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-50 dark:bg-brand-950/70 border border-brand-500 text-brand-700 dark:text-brand-300 text-xs font-bold animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-brand-500" />
+          <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-brand-50 dark:bg-brand-950/70 border border-brand-500 text-brand-700 dark:text-brand-300 text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
             <span>Screen Sharing Active</span>
             <button
               onClick={toggleScreenShare}
-              className="ml-1 px-2.5 py-0.5 rounded-full bg-brand-600 hover:bg-brand-700 text-white text-[10px] font-bold transition-colors"
+              className="ml-1 px-2.5 py-0.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold transition-colors"
             >
               Stop Sharing
             </button>
@@ -370,18 +480,6 @@ export const LiveClassroom = () => {
       <div className="flex-1 flex overflow-hidden relative">
         {/* Central Video Theater */}
         <main className="flex-1 h-full p-2 sm:p-4 overflow-y-auto custom-dark-scrollbar flex flex-col items-center justify-center relative">
-          {isScreenSharing && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-4 py-1.5 rounded-full bg-slate-900/90 dark:bg-slate-900/95 border border-brand-500/50 shadow-xl backdrop-blur-xs flex items-center gap-2 text-xs text-brand-200">
-              <span className="w-2 h-2 rounded-full bg-brand-400 animate-ping" />
-              <span>You are currently sharing your screen</span>
-              <button
-                onClick={toggleScreenShare}
-                className="ml-2 px-2.5 py-0.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold shadow-xs"
-              >
-                Stop Sharing
-              </button>
-            </div>
-          )}
           <VideoGrid
             localStream={localStream}
             remoteStreams={remoteStreams}

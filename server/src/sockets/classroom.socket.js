@@ -179,16 +179,45 @@ const registerClassroomSocketHandlers = (io, socket) => {
   });
 
   // Live session started / ended signals
-  socket.on('classroom:started', ({ classroomId }) => {
+  socket.on('classroom:started', async ({ classroomId } = {}) => {
     if (socket.user?.role !== 'teacher') return;
-    io.to(`classroom:${classroomId}`).emit('classroom:started', { classroomId });
+    const targetClassroomId = classroomId || socket.currentClassroomId;
+    if (!targetClassroomId) return;
+
+    try {
+      await Classroom.findByIdAndUpdate(targetClassroomId, {
+        isLive: true,
+        liveStartedAt: new Date(),
+        liveEndedAt: null,
+      });
+    } catch (e) {
+      console.error('[classroom:started DB error]:', e);
+    }
+
+    io.to(`classroom:${targetClassroomId}`).emit('classroom:live-status', {
+      classroomId: targetClassroomId,
+      isLive: true,
+    });
+    io.to(`classroom:${targetClassroomId}`).emit('classroom:started', { classroomId: targetClassroomId });
   });
 
-  socket.on('classroom:ended', async ({ classroomId }) => {
+  socket.on('classroom:ended', async ({ classroomId } = {}) => {
     if (socket.user?.role !== 'teacher') return;
     const targetClassroomId = classroomId || socket.currentClassroomId;
     if (targetClassroomId) {
-      await attendanceService.finalizeClassroomSessions(targetClassroomId);
+      try {
+        await Classroom.findByIdAndUpdate(targetClassroomId, {
+          isLive: false,
+          liveEndedAt: new Date(),
+        });
+        await attendanceService.finalizeClassroomSessions(targetClassroomId);
+      } catch (e) {
+        console.error('[classroom:ended DB error]:', e);
+      }
+      io.to(`classroom:${targetClassroomId}`).emit('classroom:live-status', {
+        classroomId: targetClassroomId,
+        isLive: false,
+      });
       io.to(`classroom:${targetClassroomId}`).emit('classroom:ended', { classroomId: targetClassroomId });
     }
   });
@@ -214,8 +243,9 @@ const handleUserLeavingRoom = async (io, socket, classroomId) => {
     const participant = room.get(socket.id);
 
     // Record leave in attendance if student
-    if (participant.attendanceId) {
-      await attendanceService.recordStudentLeave(participant.attendanceId);
+    if (participant.user?.role === 'student' || socket.user?.role === 'student') {
+      const studentId = participant.user?._id || socket.user?._id;
+      await attendanceService.recordStudentLeave(participant.attendanceId, studentId, classroomId);
     }
 
     room.delete(socket.id);

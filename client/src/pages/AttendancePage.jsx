@@ -303,7 +303,7 @@ export const AttendancePage = () => {
                         {c.classroom.subject}
                       </span>
                       <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
-                        {c.attendancePercentage}%
+                        {c.totalSessions === 0 ? '0%' : `${c.attendancePercentage}%`}
                       </span>
                     </div>
 
@@ -315,20 +315,42 @@ export const AttendancePage = () => {
                     <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 mt-3 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          c.attendancePercentage >= 75 ? 'bg-emerald-500' : 'bg-amber-500'
+                          c.totalSessions === 0
+                            ? 'bg-slate-300 dark:bg-slate-700'
+                            : c.attendancePercentage >= 75
+                            ? 'bg-emerald-500'
+                            : 'bg-amber-500'
                         }`}
-                        style={{ width: `${c.attendancePercentage}%` }}
+                        style={{ width: `${c.totalSessions === 0 ? 0 : c.attendancePercentage}%` }}
                       />
                     </div>
-                  </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                    <span>
-                      Attended: <strong className="text-slate-700 dark:text-slate-200">{c.attendedSessions}</strong> / {c.totalSessions}
-                    </span>
-                    <span className="text-[11px]">
-                      Missed: <strong className="text-rose-600 dark:text-rose-400">{c.missedSessions}</strong>
-                    </span>
+                    <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-center">
+                      <div>
+                        <span className="text-[10px] uppercase text-slate-400 dark:text-slate-500 font-semibold block">
+                          Total
+                        </span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          {c.totalSessions}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase text-slate-400 dark:text-slate-500 font-semibold block">
+                          Attended
+                        </span>
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                          {c.attendedSessions}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase text-slate-400 dark:text-slate-500 font-semibold block">
+                          Missed
+                        </span>
+                        <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                          {c.missedSessions}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </Card>
               ))}
@@ -361,7 +383,7 @@ export const AttendancePage = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20"
+                  className="px-3.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 shadow-xs"
                 >
                   <option value="all">All Statuses</option>
                   <option value="present">Present</option>
@@ -413,7 +435,15 @@ export const AttendancePage = () => {
                             {formatTime(item.joinedAt)}
                           </td>
                           <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-400">
-                            {formatTime(item.leftAt)}
+                            {item.leftAt ? (
+                              formatTime(item.leftAt)
+                            ) : item.classroom?.isLive ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-sans font-semibold text-[10px]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> In Session
+                              </span>
+                            ) : (
+                              formatTime(item.updatedAt || item.joinedAt)
+                            )}
                           </td>
                           <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-400">
                             {formatDuration(item.duration)}

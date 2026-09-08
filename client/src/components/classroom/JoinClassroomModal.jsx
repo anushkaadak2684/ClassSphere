@@ -38,12 +38,12 @@ export const JoinClassroomModal = ({ isOpen, onClose, onJoined, onClassroomJoine
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Join a Classroom">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Ask your teacher for the 6-character classroom join code and enter it below.
         </p>
 
         {error && (
-          <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg border border-rose-200">
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl border border-rose-200 dark:border-rose-800 font-medium">
             {error}
           </div>
         )}
@@ -61,7 +61,7 @@ export const JoinClassroomModal = ({ isOpen, onClose, onJoined, onClassroomJoine
           required
         />
 
-        <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+        <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
           <Button variant="outline" size="md" onClick={onClose} disabled={loading}>
             Cancel
           </Button>

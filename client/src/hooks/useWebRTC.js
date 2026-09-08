@@ -23,12 +23,15 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
 
   // References to keep state consistent across async callbacks
   const peerConnections = useRef(new Map()); // Map<peerSocketId, RTCPeerConnection>
+  const iceCandidatesQueue = useRef(new Map()); // Map<peerSocketId, Array<RTCIceCandidateInit>>
+  const remoteStreamsRef = useRef(new Map()); // Mirror of remoteStreams
   const localStreamRef = useRef(null);
   const screenTrackRef = useRef(null);
   const originalVideoTrackRef = useRef(null);
 
   // Helper to update remote streams state immutably
   const updateRemoteStream = useCallback((peerId, streamData) => {
+    remoteStreamsRef.current.set(peerId, streamData);
     setRemoteStreams((prev) => {
       const next = new Map(prev);
       next.set(peerId, streamData);
@@ -37,11 +40,29 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
   }, []);
 
   const removeRemoteStream = useCallback((peerId) => {
+    remoteStreamsRef.current.delete(peerId);
     setRemoteStreams((prev) => {
       const next = new Map(prev);
       next.delete(peerId);
       return next;
     });
+  }, []);
+
+  /**
+   * Drain any queued ICE candidates for a peer once remote description is set
+   */
+  const processQueuedCandidates = useCallback(async (peerSocketId, pc) => {
+    const queue = iceCandidatesQueue.current.get(peerSocketId);
+    if (queue && queue.length > 0) {
+      for (const candidate of queue) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.warn(`[WebRTC] Error adding queued ICE candidate for ${peerSocketId}:`, err);
+        }
+      }
+      iceCandidatesQueue.current.delete(peerSocketId);
+    }
   }, []);
 
   /**
@@ -127,22 +148,25 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
     // Handle remote track reception
     pc.ontrack = (event) => {
       console.log(`[WebRTC] Received remote track (${event.track.kind}) from peer:`, peerSocketId);
-      const [remoteMediaStream] = event.streams;
-      if (remoteMediaStream) {
-        updateRemoteStream(peerSocketId, {
-          stream: remoteMediaStream,
-          user: peerUser || { name: 'Participant', role: 'student' },
-          isAudioEnabled: true,
-          isVideoEnabled: true,
-        });
+      let mediaStream = event.streams && event.streams[0];
+      if (!mediaStream) {
+        const existing = remoteStreamsRef.current.get(peerSocketId);
+        mediaStream = existing?.stream ? new MediaStream(existing.stream.getTracks()) : new MediaStream();
+        if (!mediaStream.getTracks().some((t) => t.id === event.track.id)) {
+          mediaStream.addTrack(event.track);
+        }
       }
+
+      updateRemoteStream(peerSocketId, {
+        stream: mediaStream,
+        user: peerUser || { name: 'Participant', role: 'student' },
+        isAudioEnabled: true,
+        isVideoEnabled: true,
+      });
     };
 
     pc.oniceconnectionstatechange = () => {
       console.log(`[WebRTC] ICE connection state with ${peerSocketId}:`, pc.iceConnectionState);
-      if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
-        // Handle peer disconnection cleanup if needed
-      }
     };
 
     peerConnections.current.set(peerSocketId, pc);
@@ -177,6 +201,7 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
     try {
       const pc = createPeerConnection(fromPeerId, fromUser);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      await processQueuedCandidates(fromPeerId, pc);
 
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
@@ -188,7 +213,7 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
     } catch (error) {
       console.error(`[WebRTC handleReceiveOffer Error from ${fromPeerId}]:`, error);
     }
-  }, [createPeerConnection, socket]);
+  }, [createPeerConnection, processQueuedCandidates, socket]);
 
   /**
    * Handle incoming SDP Answer
@@ -198,11 +223,12 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
       const pc = peerConnections.current.get(fromPeerId);
       if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        await processQueuedCandidates(fromPeerId, pc);
       }
     } catch (error) {
       console.error(`[WebRTC handleReceiveAnswer Error from ${fromPeerId}]:`, error);
     }
-  }, []);
+  }, [processQueuedCandidates]);
 
   /**
    * Handle incoming ICE Candidate
@@ -210,8 +236,13 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
   const handleReceiveIceCandidate = useCallback(async ({ fromPeerId, candidate }) => {
     try {
       const pc = peerConnections.current.get(fromPeerId);
-      if (pc) {
+      if (pc && pc.remoteDescription && pc.remoteDescription.type) {
         await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } else {
+        if (!iceCandidatesQueue.current.has(fromPeerId)) {
+          iceCandidatesQueue.current.set(fromPeerId, []);
+        }
+        iceCandidatesQueue.current.get(fromPeerId).push(candidate);
       }
     } catch (error) {
       console.error(`[WebRTC handleReceiveIceCandidate Error from ${fromPeerId}]:`, error);
@@ -227,6 +258,7 @@ export const useWebRTC = (socket, classroomId, currentUser) => {
       pc.close();
       peerConnections.current.delete(peerSocketId);
     }
+    iceCandidatesQueue.current.delete(peerSocketId);
     removeRemoteStream(peerSocketId);
   }, [removeRemoteStream]);
 

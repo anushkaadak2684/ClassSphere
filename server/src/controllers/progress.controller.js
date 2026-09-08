@@ -23,7 +23,7 @@ const getClassroomProgress = asyncHandler(async (req, res) => {
 
   // Get total unique session dates held for this classroom
   const distinctDates = await Attendance.distinct('sessionDate', { classroom: classroomId });
-  const totalSessionsCount = distinctDates.length;
+  let totalSessionsCount = distinctDates.length;
 
   // Get all assignments for this classroom
   const assignments = await Assignment.find({ classroom: classroomId }).lean();
@@ -36,9 +36,18 @@ const getClassroomProgress = asyncHandler(async (req, res) => {
     const studentAttendanceRecords = await Attendance.find({
       classroom: classroomId,
       student: req.user._id,
-    });
+    }).sort({ joinedAt: -1 }).lean();
 
-    const attendedSessionsCount = studentAttendanceRecords.filter((r) => r.status === 'present' || r.duration >= 60).length;
+    // Deduplicate student attended dates
+    const distinctAttendedDates = new Set(
+      studentAttendanceRecords
+        .filter((r) => r.status === 'present' || r.duration >= 60)
+        .map((r) => (r.sessionDate ? new Date(r.sessionDate).toISOString().split('T')[0] : new Date(r.joinedAt).toISOString().split('T')[0]))
+        .filter(Boolean)
+    );
+    const attendedSessionsCount = distinctAttendedDates.size;
+    totalSessionsCount = Math.max(totalSessionsCount, attendedSessionsCount);
+
     const attendancePercentage = totalSessionsCount > 0
       ? Math.min(100, Math.round((attendedSessionsCount / totalSessionsCount) * 100))
       : 100;
@@ -122,10 +131,20 @@ const getClassroomProgress = asyncHandler(async (req, res) => {
   // Aggregate per student
   const studentProgressList = enrollments.map((e) => {
     const sId = e.student._id.toString();
-    const studentAtt = allAttendance.filter((a) => a.student.toString() === sId);
-    const attendedCount = studentAtt.filter((a) => a.status === 'present' || a.duration >= 60).length;
-    const attPercent = totalSessionsCount > 0
-      ? Math.min(100, Math.round((attendedCount / totalSessionsCount) * 100))
+    const studentAtt = allAttendance.filter((a) => (a.student?._id || a.student).toString() === sId);
+    
+    // Deduplicate student attended dates
+    const distinctAttendedDates = new Set(
+      studentAtt
+        .filter((a) => a.status === 'present' || a.duration >= 60)
+        .map((a) => (a.sessionDate ? new Date(a.sessionDate).toISOString().split('T')[0] : new Date(a.joinedAt).toISOString().split('T')[0]))
+        .filter(Boolean)
+    );
+    const attendedCount = distinctAttendedDates.size;
+    const studentTotalSessions = Math.max(totalSessionsCount, attendedCount);
+
+    const attPercent = studentTotalSessions > 0
+      ? Math.min(100, Math.round((attendedCount / studentTotalSessions) * 100))
       : 100;
 
     const studentSubs = allSubmissions.filter((sub) => sub.student.toString() === sId);
@@ -145,6 +164,7 @@ const getClassroomProgress = asyncHandler(async (req, res) => {
       enrolledAt: e.joinedAt,
       attendancePercentage: attPercent,
       attendedSessions: attendedCount,
+      totalSessions: studentTotalSessions,
       completedAssignments: studentSubs.length,
       totalAssignments: totalAssignmentsCount,
       gradedCount: gradedSubs.length,
@@ -207,14 +227,20 @@ const getStudentDetailsInClassroom = asyncHandler(async (req, res) => {
 
   // Session attendance for this classroom
   const distinctSessions = await Attendance.distinct('sessionDate', { classroom: classroomId });
-  const totalSessions = distinctSessions.length;
-
   const attendanceRecords = await Attendance.find({
     classroom: classroomId,
     student: studentId,
   }).sort({ joinedAt: -1 }).lean();
 
-  const attendedCount = attendanceRecords.filter((r) => r.status === 'present' || r.duration >= 60).length;
+  const distinctAttendedDates = new Set(
+    attendanceRecords
+      .filter((r) => r.status === 'present' || r.duration >= 60)
+      .map((r) => (r.sessionDate ? new Date(r.sessionDate).toISOString().split('T')[0] : new Date(r.joinedAt).toISOString().split('T')[0]))
+      .filter(Boolean)
+  );
+  const attendedCount = distinctAttendedDates.size;
+  const totalSessions = Math.max(distinctSessions.length, attendedCount);
+
   const attendancePercentage = totalSessions > 0
     ? Math.min(100, Math.round((attendedCount / totalSessions) * 100))
     : 100;

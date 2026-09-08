@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import authService from '../services/auth.service';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -26,15 +27,20 @@ export const AuthProvider = ({ children }) => {
         const profile = await authService.getMe();
         setUser(profile);
       } catch (err) {
-        // If MongoDB record does not exist yet (e.g. fresh register sync in progress), sync it
+        // If MongoDB record does not exist yet (e.g. fresh register sync in progress), sync it directly
         const role = localStorage.getItem('classsphere_role') || 'student';
-        const synced = await authService.register(
-          fbUser.displayName || fbUser.email.split('@')[0],
-          fbUser.email,
-          'defaultPass',
-          role
+        const syncRes = await api.post(
+          '/users/sync',
+          {
+            name: fbUser.displayName || fbUser.email?.split('@')[0],
+            email: fbUser.email?.toLowerCase(),
+            role,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
-        setUser(synced);
+        setUser(syncRes.data || syncRes);
       }
     } catch (err) {
       console.error('[AuthContext Profile Fetch Notice]:', err.message);

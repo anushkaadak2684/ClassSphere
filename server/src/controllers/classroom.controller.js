@@ -157,6 +157,17 @@ const startLiveSession = asyncHandler(async (req, res) => {
 
   await classroom.save();
 
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`classroom:${classroom._id}`).emit('classroom:live-status', {
+      classroomId: classroom._id.toString(),
+      isLive: true,
+    });
+    io.to(`classroom:${classroom._id}`).emit('classroom:started', {
+      classroomId: classroom._id.toString(),
+    });
+  }
+
   res.status(200).json({
     success: true,
     data: classroom,
@@ -179,6 +190,17 @@ const endLiveSession = asyncHandler(async (req, res) => {
 
   // Finalize all open student attendance records for this session
   await attendanceService.finalizeClassroomSessions(classroom._id);
+
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`classroom:${classroom._id}`).emit('classroom:live-status', {
+      classroomId: classroom._id.toString(),
+      isLive: false,
+    });
+    io.to(`classroom:${classroom._id}`).emit('classroom:ended', {
+      classroomId: classroom._id.toString(),
+    });
+  }
 
   res.status(200).json({
     success: true,

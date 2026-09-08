@@ -135,30 +135,36 @@ export const Register = () => {
             <Input
               label="Full Name"
               type="text"
-              placeholder="e.g. Anushka Adak"
+              name="reg_fullname"
+              placeholder="e.g. Alex Johnson"
               icon={User}
               value={name}
               onChange={(e) => setName(e.target.value)}
+              autoComplete="off"
               required
             />
 
             <Input
               label="Academic Email"
               type="email"
-              placeholder="e.g. anushka@university.edu"
+              name="reg_email"
+              placeholder="e.g. name@university.edu"
               icon={Mail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
               required
             />
 
             <Input
               label="Password"
               type="password"
-              placeholder="At least 6 characters"
+              name="reg_password"
+              placeholder="Create a password (min. 6 characters)"
               icon={Lock}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
 

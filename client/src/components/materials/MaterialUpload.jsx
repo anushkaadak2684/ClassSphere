@@ -12,11 +12,19 @@ export const MaterialUpload = ({ isOpen, onClose, classroomId, onUploaded }) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const resetForm = () => {
+    setFile(null);
+    setName('');
+    setDescription('');
+  };
+
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+    const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       if (selectedFile.size > 25 * 1024 * 1024) {
-        setError('File exceeds 25MB limit.');
+        resetForm();
+        e.target.value = '';
+        setError('File exceeds 25MB limit. Maximum allowed size is 25MB.');
         return;
       }
       setFile(selectedFile);
@@ -43,13 +51,17 @@ export const MaterialUpload = ({ isOpen, onClose, classroomId, onUploaded }) => 
       formData.append('description', description);
 
       const newMaterial = await classroomService.uploadMaterial(classroomId, formData);
-      setFile(null);
-      setName('');
-      setDescription('');
+      resetForm();
       onUploaded(newMaterial);
       onClose();
     } catch (err) {
-      setError(err.message || 'Failed to upload material.');
+      // On failure, reset state and display appropriate error
+      resetForm();
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to upload material. Please ensure file is under 25MB and try again.';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -59,36 +71,36 @@ export const MaterialUpload = ({ isOpen, onClose, classroomId, onUploaded }) => 
     <Modal isOpen={isOpen} onClose={onClose} title="Upload Classroom Material">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg border border-rose-200">
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl border border-rose-200 dark:border-rose-800 font-medium">
             {error}
           </div>
         )}
 
         {/* File Dropzone / Picker */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
             Select File (PDF, Word, PPT, Image — max 25MB)
           </label>
-          <div className="relative border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors bg-slate-50/50">
+          <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors bg-slate-50/50 dark:bg-slate-800/40">
             <input
               type="file"
               onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.zip,.txt"
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             {file ? (
-              <div className="flex items-center gap-2 text-brand-600">
+              <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400">
                 <FileText className="w-6 h-6" />
                 <span className="text-xs font-semibold truncate max-w-xs">{file.name}</span>
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                <UploadCloud className="w-8 h-8 text-slate-400 mb-2" />
-                <p className="text-xs font-medium text-slate-700">
+                <UploadCloud className="w-8 h-8 text-slate-400 dark:text-slate-500 mb-2" />
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Click or drag file here to upload
                 </p>
-                <p className="text-3xs text-slate-400 mt-1">PDF, DOC, PPTX, PNG up to 25MB</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">PDF, DOC, PPTX, PNG up to 25MB</p>
               </div>
             )}
           </div>
@@ -102,7 +114,7 @@ export const MaterialUpload = ({ isOpen, onClose, classroomId, onUploaded }) => 
         />
 
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
             Description (Optional)
           </label>
           <textarea
@@ -110,11 +122,11 @@ export const MaterialUpload = ({ isOpen, onClose, classroomId, onUploaded }) => 
             placeholder="Notes or chapter details for this file..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="block w-full rounded-lg border border-slate-300 bg-white text-slate-900 text-sm px-3.5 py-2 placeholder-slate-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+            className="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs sm:text-sm px-3.5 py-2.5 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
           />
         </div>
 
-        <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+        <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
           <Button variant="outline" size="md" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
@@ -122,11 +134,10 @@ export const MaterialUpload = ({ isOpen, onClose, classroomId, onUploaded }) => 
             type="submit"
             variant="primary"
             size="md"
-            icon={UploadCloud}
             isLoading={loading}
-            disabled={!file}
+            icon={UploadCloud}
           >
-            {loading ? 'Uploading...' : 'Upload File'}
+            Upload Material
           </Button>
         </div>
       </form>

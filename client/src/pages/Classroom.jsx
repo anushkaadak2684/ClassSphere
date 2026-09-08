@@ -19,6 +19,7 @@ import {
   Crown,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
+import useSocket from '../hooks/useSocket';
 import classroomService from '../services/classroom.service';
 import AppLayout from '../components/layout/AppLayout';
 import Button from '../components/common/Button';
@@ -40,6 +41,7 @@ export const Classroom = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isTeacher } = useAuth();
+  const { socket, isConnected } = useSocket();
 
   const searchParams = new URLSearchParams(location.search);
   const initialTab = searchParams.get('tab') || 'overview';
@@ -106,6 +108,41 @@ export const Classroom = () => {
   useEffect(() => {
     fetchAllData();
   }, [id]);
+
+  // Real-time Live Session Status Socket Listeners
+  useEffect(() => {
+    if (!socket || !isConnected || !id) return;
+
+    const handleLiveStatus = ({ classroomId, isLive }) => {
+      if (classroomId === id) {
+        setClassroom((prev) => (prev ? { ...prev, isLive } : prev));
+      }
+    };
+
+    const handleStarted = ({ classroomId }) => {
+      if (classroomId === id) {
+        setClassroom((prev) => (prev ? { ...prev, isLive: true } : prev));
+      }
+    };
+
+    const handleEnded = ({ classroomId }) => {
+      if (classroomId === id) {
+        setClassroom((prev) => (prev ? { ...prev, isLive: false } : prev));
+        // Refresh progress & attendance when live session concludes
+        fetchAllData();
+      }
+    };
+
+    socket.on('classroom:live-status', handleLiveStatus);
+    socket.on('classroom:started', handleStarted);
+    socket.on('classroom:ended', handleEnded);
+
+    return () => {
+      socket.off('classroom:live-status', handleLiveStatus);
+      socket.off('classroom:started', handleStarted);
+      socket.off('classroom:ended', handleEnded);
+    };
+  }, [socket, isConnected, id]);
 
   const refreshAssignmentsAndProgress = async () => {
     try {
