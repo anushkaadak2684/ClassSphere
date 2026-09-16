@@ -3,7 +3,7 @@
  * as binary blobs to guarantee proper filename, extension, and content type.
  *
  * @param {string} url - The remote or Cloudinary file URL
- * @param {string} fallbackFilename - Filename with extension (e.g. "Assignment_1.pdf")
+ * @param {string} fallbackFilename - Filename with extension
  */
 export const downloadFile = async (url, fallbackFilename = 'downloaded_file') => {
   if (!url) {
