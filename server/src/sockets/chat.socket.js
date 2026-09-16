@@ -1,15 +1,28 @@
 const Message = require('../models/Message');
+const Classroom = require('../models/Classroom');
 
 /**
  * Real-Time Chat Socket Handlers
  */
 const registerChatSocketHandlers = (io, socket) => {
-  // Fetch chat history for classroom
+  // Fetch chat history for classroom (scoped to current active live session)
   socket.on('chat:history', async ({ classroomId }) => {
     try {
       if (!classroomId) return;
 
-      const messages = await Message.find({ classroom: classroomId })
+      const classroom = await Classroom.findById(classroomId).lean();
+      if (!classroom) return socket.emit('chat:history', []);
+
+      // If the classroom is live or has a liveStartedAt timestamp, scope chat history to current session
+      const query = { classroom: classroomId };
+      if (classroom.liveStartedAt) {
+        query.createdAt = { $gte: classroom.liveStartedAt };
+      } else if (!classroom.isLive) {
+        // If not live and no current session timestamp, don't show old session chats
+        return socket.emit('chat:history', []);
+      }
+
+      const messages = await Message.find(query)
         .populate('sender', 'name email avatarUrl role')
         .sort({ createdAt: 1 })
         .limit(100)
@@ -27,6 +40,7 @@ const registerChatSocketHandlers = (io, socket) => {
       socket.emit('chat:history', formatted);
     } catch (error) {
       console.error('[Chat History Error]:', error);
+      socket.emit('chat:history', []);
     }
   });
 
