@@ -59,7 +59,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({
     success: true,
     status: 'ok',
@@ -68,13 +68,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/users', userRoutes);
-app.use('/api/classrooms', classroomRoutes);
-app.use('/api', materialRoutes);
-app.use('/api', attendanceRoutes);
-app.use('/api', assignmentRoutes);
-app.use('/api', progressRoutes);
+// API Routes (supports both /api/* and direct /* paths)
+app.use(['/api/users', '/users'], userRoutes);
+app.use(['/api/classrooms', '/classrooms'], classroomRoutes);
+app.use(['/api', '/'], materialRoutes);
+app.use(['/api', '/'], attendanceRoutes);
+app.use(['/api', '/'], assignmentRoutes);
+app.use(['/api', '/'], progressRoutes);
 
 // Catch 404
 app.use((req, res) => {

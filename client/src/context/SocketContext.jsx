@@ -4,7 +4,19 @@ import { useAuth } from './AuthContext';
 
 const SocketContext = createContext(null);
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const getSocketUrl = () => {
+  let url = import.meta.env.VITE_SOCKET_URL;
+  if (!url && import.meta.env.VITE_API_URL) {
+    url = import.meta.env.VITE_API_URL;
+  }
+  if (!url) {
+    url = 'http://localhost:5000';
+  }
+  // Strip any accidental /api suffix and trailing slashes
+  return url.trim().replace(/\/api\/?$/, '').replace(/\/+$/, '');
+};
+
+const SOCKET_URL = getSocketUrl();
 
 export const SocketProvider = ({ children }) => {
   const { user, firebaseUser } = useAuth();
